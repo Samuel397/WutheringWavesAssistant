@@ -108,6 +108,27 @@ def test_handwritten_page_patterns_also_tolerate_accent_loss():
     )
 
 
+def test_portuguese_terminal_page_uses_large_stable_labels():
+    page = I18N_PAGES[I18nPage.Terminal.PAGE][Language.PT]
+    include = page[I18nPage.Include]
+
+    assert set(include) == {
+        I18nPage.Terminal.Terminal,
+        I18nPage.Terminal.Events,
+    }
+    assert re.fullmatch(include[I18nPage.Terminal.Terminal], "Terminal", re.IGNORECASE)
+    assert re.fullmatch(include[I18nPage.Terminal.Events], "Eventos", re.IGNORECASE)
+
+
+@pytest.mark.parametrize("ocr_text", ("Podcast", "Pioneiro", "Podcast Pioneiro", "Podcast\nPioneiro"))
+def test_portuguese_terminal_podcast_accepts_split_ocr_lines(ocr_text):
+    assert re.fullmatch(
+        I18nTr(Language.PT)(I18nText.TerminalPioneerPodcast),
+        ocr_text,
+        re.IGNORECASE,
+    )
+
+
 @pytest.mark.parametrize(
     ("key", "ocr_text"),
     (

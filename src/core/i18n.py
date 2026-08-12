@@ -2186,6 +2186,15 @@ def _install_portuguese_text_mappings() -> None:
             desc="Official Portuguese Wuthering Waves TextMap",
         )
 
+    # No Terminal, o rótulo do Podcast é renderizado em duas linhas. O OCR
+    # pode devolvê-las juntas ou como caixas independentes; aceite as três
+    # formas, como o reconhecedor inglês já faz.
+    I18N_TEXT[I18nText.TerminalPioneerPodcast][Language.PT] = RegexStr(
+        r"^(?:Podcast|Pioneiro|Podcast\s*?Pioneiro)$",
+        raw=PT_OFFICIAL_TEXT[I18nText.TerminalPioneerPodcast][0],
+        desc="Rótulo PT-BR do Podcast no Terminal, possivelmente dividido em duas linhas",
+    )
+
 _install_portuguese_text_mappings()
 
 
@@ -3583,10 +3592,11 @@ def _install_portuguese_pages() -> None:
         I18nPage.Terminal.PAGE: _pt_page(
             "UI-Terminal",
             {
+                # Os dois rótulos grandes são estáveis mesmo no OCR reduzido.
+                # Os dados de conta abaixo deles são pequenos e fizeram a
+                # página válida falhar ao exigir quatro correspondências.
+                I18nPage.Terminal.Terminal: pt_regex(I18nText.Terminal),
                 I18nPage.Terminal.Events: pt_regex(I18nText.Events),
-                I18nPage.Terminal.SOL3Phase: pt_regex(I18nText.SOL3Phase),
-                I18nPage.Terminal.UnionLevel: pt_regex(I18nText.UnionLevel),
-                I18nPage.Terminal.UnionEXP: pt_regex(I18nText.UnionEXP),
             },
         ),
         I18nPage.Reward_LuniteSubscriptionReward.PAGE: _pt_page(
