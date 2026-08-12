@@ -14,9 +14,9 @@ def select_ocr_engine_impl():
             from paddleocr import PaddleOCR  # type: ignore
             from src.service.ocr_service import PaddleOcrServiceImpl
             ocr_engine_impl = PaddleOcrServiceImpl
-            logger.info("paddleocr detected")
+            logger.info("PaddleOCR detectado")
     except Exception:
-        logger.exception("Failed to import PaddleOCR")
+        logger.exception("Falha ao importar o PaddleOCR")
     # 默认ocr引擎
     if ocr_engine_impl is None:
         from src.service.ocr_service import RapidOcrServiceImpl

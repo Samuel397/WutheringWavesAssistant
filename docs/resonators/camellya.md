@@ -1,121 +1,121 @@
-# 椿 (Camellya) - 连招逻辑分析
+# Camellya — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
+| Campo | Valor |
 |------|------|
-| 角色名称 | 椿 (Camellya) |
-| 角色定位 | MainDPS（主输出） |
-| 元素属性 | 湮灭 (Havoc) |
-| 协奏类型 | 紫圈 (concerto_havoc) |
-| 版本 | v1.4 |
-| 源文件 | `src/core/combat/resonator/camellya.py` |
+| Ressonador | Camellya |
+| Função | MainDPS (DPS principal) |
+| Atributo | Havoc |
+| Tipo de Concerto | círculo roxo (concerto_havoc) |
+| Versão | v1.4 |
+| Arquivo-fonte | `src/core/combat/resonator/camellya.py` |
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 能量检测
+### Detecção de energia
 
-| 检测项 | 类型 | 检测方式 |
+| Item detectado | Tipo | Método de detecção |
 |--------|------|----------|
-| 能量满 | 单级（0/1） | 检测血条上方能量条末端像素是否为紫色 `(131-135, 48-66, 255)` |
+| Energia cheia | Nível único (0/1) | Verifica se o pixel no fim da barra de energia, acima da barra de PV, está roxo `(131-135, 48-66, 255)` |
 
-### 技能检测
+### Teste de habilidade
 
-| 检测项 | 图标颜色 | 逻辑 | 说明 |
+| Item detectado | Cor do ícone | Lógica | Descrição |
 |--------|----------|------|------|
-| 共鸣技能 - 红椿盛绽 | 白色 `(255,255,255)` | AND | 进入盛绽状态（白椿→红椿） |
-| 共鸣技能 - 黯蕊猎心 | 白色 `(255,255,255)` | AND | 退出盛绽状态（红椿→白椿） |
-| 共鸣技能 - 一日花 | 白色 `(255,255,255)` | AND | 特殊技能，消耗红椿·蕾 |
-| 共鸣技能 - 一日花(入场) | 粉紫色 `(153,66,212)` | AND | 变奏入场时的一日花状态 |
-| 声骸技能 | 白色 `(255,255,255)` | OR | 声骸技能就绪 |
-| 共鸣解放 | 白色/粉紫 `(255,255,255)/(153,66,212)` | OR | 大招就绪 |
+| Habilidade de Ressonância - Red Camellia Bloom | branco `(255,255,255)` | AND | Entrada na forma em floração (Camélia Branca → Camélia Rubra) |
+| Habilidade de Ressonância - Dark Core Hunting Heart | branco `(255,255,255)` | AND | Saída da forma em floração (Camélia Rubra → Camélia Branca) |
+| Habilidade de Ressonância - Flor Efêmera | branco `(255,255,255)` | AND | Habilidade especial que consome os Botões de Camélia Rubra |
+| Habilidade de Ressonância - Flor Efêmera (Intro) | rosa-arroxeado `(153,66,212)` | AND | Estado da Flor Efêmera ao entrar pela Habilidade de Intro |
+| Habilidade de Eco | branco `(255,255,255)` | OR | Habilidade de Eco pronta |
+| Liberação de Ressonância | branco/rosa-arroxeado `(255,255,255)/(153,66,212)` | OR | Liberação de Ressonância pronta |
 
-## 角色机制
+## Mecânicas do Ressonador
 
-椿有两种形态：
-- **白椿** - 常规形态，通过 E（红椿盛绽）进入红椿状态
-- **红椿** - 盛绽状态，攻击会消耗【红椿·蕊】，通过 E（黯蕊猎心）退出
+Camellya possui duas formas:
+- **Camélia Branca** - forma normal; E (`Red Camellia Bloom`) ativa a Camélia Rubra
+- **Camélia Rubra** - forma em floração; os ataques consomem Botões de Camélia Rubra e E (`Dark Core Hunting Heart`) encerra a forma
 
-**一日花** 是特殊的 E 技能，出现条件为积攒足够的红椿·蕾。一日花会清除已有的红椿·蕾。
+**Flor Efêmera** é uma Habilidade de Ressonância especial, disponibilizada após acumular Botões de Camélia Rubra suficientes. Ao usá-la, os Botões acumulados são consumidos.
 
-## 连招片段
+## Fragmentos de combo
 
-### 白椿形态
+### Forma Camélia Branca
 
-| 方法 | 描述 | 动作序列概要 |
+| Método | Descrição | Resumo da sequência de ação |
 |------|------|-------------|
-| `a4()` | 白椿4段普攻 | 连续快速普攻4次 |
-| `a3()` | 随便打几下 | 3次普攻，用于入场防止变奏吞操作 |
-| `a3z()` | 白椿3段普攻+转圈派生 | 3次普攻接长按重击转圈 |
-| `waz()` | 从a2继续打+转圈派生 | 前进+普攻+长按重击转圈 |
-| `z()` | 白椿重击转圈 | 长按4.78秒转圈 |
+| `a4()` | Quatro ataques básicos da Camélia Branca | Ataca rapidamente quatro vezes |
+| `a3()` | Três ataques básicos | Evita que a animação da Intro descarte as entradas seguintes |
+| `a3z()` | Três ataques básicos + giro | Três ataques seguidos de um ataque pesado giratório |
+| `waz()` | Continuação do segundo ataque + giro | Avança, ataca e mantém o botão pressionado para girar |
+| `z()` | Giro da Camélia Branca | Mantém o ataque pressionado por 4,78 segundos |
 
-### 红椿形态
+### Forma Camélia Vermelha
 
-| 方法 | 描述 | 动作序列概要 |
+| Método | Descrição | Resumo da sequência de ação |
 |------|------|-------------|
-| `Eaazja()` | 白→红普攻重击转圈下砸 | E+2a+重击转圈+下砸+普攻 |
-| `aazja()` | 红椿普攻重击转圈下砸 | 2a+重击转圈+下砸+普攻 |
-| `Ezja()` | 白→红重击转圈下砸 | E+重击转圈+下砸+普攻 |
-| `zja()` | 红椿重击转圈下砸 | 重击转圈+下砸+普攻 |
-| `ja()` | 落地退出红椿 | 跳跃+普攻落地 |
+| `Eaazja()` | Branca → Rubra, ataques, giro e queda | E + 2 ataques + ataque pesado giratório + ataque descendente + ataque básico |
+| `aazja()` | Ataques, giro e queda na forma Rubra | 2 ataques + ataque pesado giratório + ataque descendente + ataque básico |
+| `Ezja()` | Branca → Rubra, giro e queda | E + ataque pesado giratório + ataque descendente + ataque básico |
+| `zja()` | Giro e queda na forma Rubra | Ataque pesado giratório + ataque descendente + ataque básico |
+| `ja()` | Saída da forma Rubra ao aterrissar | Salto + ataque básico descendente |
 
-### 进阶操作
+### Operação avançada
 
-| 方法 | 描述 | 动作序列概要 |
+| Método | Descrição | Resumo da sequência de ação |
 |------|------|-------------|
-| `EQdzjE()` | Q闪取消转红椿+三连鞭 | E+Q+闪避+长按重击+跳跃+E |
-| `QdEj()` | 红椿Q闪取消转白椿 | Q+闪避+E+跳跃 |
-| `ephemeral_a()` | 一日花下砸 | E×4+普攻落地 |
+| `EQdzjE()` | Cancela Q com esquiva, entra na forma Rubra e executa três golpes | E + Q + esquiva + ataque pressionado + salto + E |
+| `QdEj()` | Cancela Q com esquiva e retorna à forma Branca | Q + esquiva + E + salto |
+| `ephemeral_a()` | Flor Efêmera | E × 4 + ataque básico ao aterrissar |
 
-### 大招
+### Liberação de Ressonância
 
-| 方法 | 描述 | 动作序列概要 |
+| Método | Descrição | Resumo da sequência de ação |
 |------|------|-------------|
-| `R()` | 共鸣解放 | R×4（冗余多按） |
-| `RaRa()` | 共鸣解放+穿插普攻 | R和a交替，等R结束后放一日花 |
+| `R()` | Liberação de Ressonância | R × 4 (entradas redundantes) |
+| `RaRa()` | Liberação intercalada com ataques básicos | Alterna R e ataque; espera a animação terminar e então usa Flor Efêmera |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```
-入场: a3() 打几下普攻（防变奏吞操作）
+Entrada em campo: a3() executa alguns ataques básicos (evita que a animação da Intro descarte comandos)
 
-截图检测技能状态
+Captura a tela e detecta o estado das habilidades
 
-阶段1 - 优先处理特殊状态:
-├─ 一日花就绪 AND 大招就绪 → RaRa() + ephemeral_a()
-├─ 一日花就绪 → ephemeral_a()
-└─ 大招就绪 → R()
+Etapa 1 — prioriza os estados especiais:
+├─ Flor Efêmera pronta AND Liberação pronta → RaRa() + ephemeral_a()
+├─ Flor Efêmera pronta → ephemeral_a()
+└─ Liberação pronta → R()
 
-阶段2 - 白椿/红椿连招:
-├─ 白椿 (红椿盛绽就绪):
-│   ├─ 冥歌海墟模式 → QdEj()
-│   └─ 正常模式 → 50%概率 waz() / 50%概率 EQdzjE()
-├─ 红椿 (黯蕊猎心就绪):
-│   ├─ 冥歌海墟模式 → zja()
-│   └─ 正常模式 → EQdzjE()
-└─ 兜底 → a4() 普攻4段
+Etapa 2 — combos das formas Camélia Branca e Camélia Rubra:
+├─ Camélia Branca (Red Camellia Bloom pronta):
+│   ├─ Modo Dream of Lost Seas → QdEj()
+│   └─ Modo normal → 50% de chance de waz() / 50% de chance de EQdzjE()
+├─ Camélia Rubra (Dark Core Hunting Heart pronta):
+│   ├─ Modo Dream of Lost Seas → zja()
+│   └─ Modo normal → EQdzjE()
+└─ Contingência → a4(), com quatro ataques básicos
 
-阶段3 - 再次检查:
-├─ 一日花就绪 AND 大招就绪 → boss血量>30%时RaRa() + ephemeral_a()
-├─ 一日花就绪 → ephemeral_a()
-└─ 大招就绪 → RaRa() + 再检查一日花
+Etapa 3 — verifica novamente:
+├─ Flor Efêmera pronta AND Liberação pronta → se os PV do BOSS forem > 30%, RaRa() + ephemeral_a()
+├─ Flor Efêmera pronta → ephemeral_a()
+└─ Liberação pronta → RaRa() + nova verificação da Flor Efêmera
 ```
 
-## 特殊处理
+## Tratamento especial
 
 ### `exit_special_state()`
 
-战斗结束移动前调用，用于退出红椿盛绽状态。执行 `ja()` 跳跃+普攻落地动作（设置 `ignore_event=True` 忽略暂停事件），然后 `dash_dodge()` 后闪复位防止椿前移偏离。
+Chamado antes do deslocamento pós-combate para sair da forma Rubra. Executa `ja()` (salto + ataque básico descendente) com `ignore_event=True` e depois `dash_dodge()` para restaurar a esquiva sem fazer Camellya avançar.
 
-### 冗余操作设计
+### Projeto de operação redundante
 
-椿的连招中大量使用了冗余操作：
-- **多次按 E** - 确保E技能释放成功
-- **多次按 R** - 确保大招释放成功
-- **RaRa 交替** - R和普攻交替确保不卡住
-- **拆分长等待** - 将长时间等待拆分为多个短操作
+Os combos de Camellya usam entradas redundantes de forma intencional:
+- **E repetido** - aumenta a chance de a Habilidade de Ressonância ser ativada
+- **R repetido** - aumenta a chance de a Liberação ser ativada
+- **`RaRa()` alternado** - intercala R e ataque básico para evitar travamentos
+- **Esperas fragmentadas** - substituem uma espera longa por várias operações curtas
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 06/02/2026*

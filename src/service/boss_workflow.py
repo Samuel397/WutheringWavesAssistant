@@ -257,7 +257,7 @@ def globalDispatcher(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[s
         return None
 
     # 兜底规则，esc
-    logger.info("Transferring")
+    logger.info("Transferindo")
 
     # num = round(random.uniform(1.5, 2.0), 2)
     num = max(1, min(1.4, random.gauss(1.2, 0.08)))
@@ -277,7 +277,7 @@ def rootDispatcher(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str
         return I18nText.TerminalPioneerPodcast
 
     if local.rootFSM.is_active:
-        logger.warning("Unexpected root state")
+        logger.warning("Estado raiz inesperado")
     return None
 
 
@@ -307,13 +307,13 @@ def doTravelToResonanceNexus(ctx: NodeContext, local: TaskLocal, **kwargs) -> bo
         AnchorPoint(600, 0, Align.Right | Align.Top), AnchorPoint(925, 1280, Align.Right | Align.Bottom)))
     if not ui.sleep(0.3).wait().until(
             lambda: ui.snapshot().click_text(ctx.tr(I18nText.Huanglong), regions_roi, delay=0.4)):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.Huanglong).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Huanglong).raw}")
         return False
 
     # 选择今州城
     if not ui.sleep(0.3).wait().until(
             lambda: ui.snapshot().click_text(ctx.tr(I18nText.Jinzhou), delay=0.4)):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.Jinzhou).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Jinzhou).raw}")
         return False
 
     # 点击今州城传送点
@@ -324,7 +324,7 @@ def doTravelToResonanceNexus(ctx: NodeContext, local: TaskLocal, **kwargs) -> bo
     feature_data = matcher.build_feature_data(tmpl_name, tmpl_img)
     result = matcher.match(scene_img, feature_data)
     if result is None:
-        logger.warning("Feature match failed")
+        logger.warning("Falha na correspondência de características")
         return False
     # (466, 309)
     point = Point(433, 187)
@@ -353,13 +353,13 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
 
     # 终端
     if not ui.match_page(I18nPage.Terminal.PAGE):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.Terminal)}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Terminal)}")
         ui.esc().sleep(1)
         return None
 
     # 点击进入编队
     if not ui.click_text(ctx.tr(I18nText.Team), bbox_terminal_content(ctx), pk=PointKind.NEAR, times=2, interval=0.2):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.Team).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Team).raw}")
         return False
 
     roi = ctx.scaler.as_bbox(AnchorBBox(
@@ -369,7 +369,7 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
     if not ui.sleep(0.8).wait(5, 0.5).until(
         lambda: ui.snapshot().search(ctx.tr(I18nText.QuickSetup), roi)):
         # lambda: ui.snapshot(resize=False).search(ctx.tr(I18nText.QuickSetup), roi)):
-        logger.info(f"编队已锁定，离开战斗区域")
+        logger.info("Equipe bloqueada; saindo da área de combate")
         return False
 
     # 检查失去意识
@@ -379,7 +379,7 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
     ))
     result = ui.search(ctx.tr(I18nText.ResonatorDowned), roi)
     if result:
-        logger.info(f"resonator downed: {len(result)}")
+        logger.info(f"Ressonadores derrotados: {len(result)}")
         if ui.esc().sleep(0.5).wait_back_home():
             ui.sleep(0.3)
         return False
@@ -426,7 +426,7 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
         if match.match(img):
             members_info[i][2] = True
 
-    keys = Resonator.i18n_keys()
+    keys = [key for key in Resonator.i18n_keys() if ctx.tr(key) is not None]
     lang = ctx.window_service.get_lang()
 
     for text_box in ui.bbox_result:
@@ -446,7 +446,7 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
                 # 角色名都对不上，默认为主角
                 members_info[i][0] = enum_obj.value if enum_obj else ResonatorNameEnum.rover.value
                 team_members[i] = members_info[i][0]
-            elif lang == Language.EN:
+            elif lang in {Language.EN, Language.PT}:
                 key = next((k for k in keys if ui.match_key(k, text_box.text)), None)
                 if not key:
                     key = I18nText.Rover
@@ -454,16 +454,16 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
                 team_members[i] = members_info[i][0]
 
             else:
-                raise NotImplementedError()
+                raise NotImplementedError(f"Idioma OCR da equipe não compatível: {lang}")
             # logger.debug(f"team_members[{i}]: {team_members[i]}")
 
     # logger.debug(f"members_info: {members_info}")
-    logger.info(f"team members: {team_members}")
+    logger.info(f"Membros da equipe: {team_members}")
 
     ui.esc().sleep(1)
     if not any(team_members):  # 兜底，留一个角色，至少能动
         team_members = ["unknown", None, None]
-        logger.info(f"reset team members: {team_members}")
+        logger.info(f"Redefinindo membros da equipe: {team_members}")
     local.teamFSM.complete()
     ctx.shared.team_members = team_members
     # ctx.shared.team_members = ["今汐", "长离", "守岸人"]
@@ -484,7 +484,7 @@ def doGuidebook(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str]:
         # 点击进入索拉指南
         if not ui.click_text(ctx.tr(I18nText.Guidebook), bbox_terminal_content(ctx),
                              pk=PointKind.NEAR, delay=0.2, times=2, interval=0.2):
-            logger.warning(f"Text not found: {ctx.tr(I18nText.Guidebook).raw}")
+            logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Guidebook).raw}")
             return None
     else:
         ctx.control_service.guidebook()
@@ -516,7 +516,7 @@ def doGuidebook(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str]:
     title_roi = bbox_guidebook_title(ctx)
 
     if not ui.sleep(0.5).wait().until(lambda: ui.snapshot().search(titles, title_roi)):
-        logger.warning(f"Page not found: {ctx.tr(I18nText.Guidebook).raw}")
+        logger.warning(f"Página não encontrada: {ctx.tr(I18nText.Guidebook).raw}")
         return None
 
     # 根据任务的开启状态分发任务
@@ -527,7 +527,7 @@ def doGuidebook(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str]:
             for i in range(2):
                 icon_point = search_icon_materials_spots(ctx)
                 if not icon_point:
-                    logger.warning(f"materialsSpots icon not found")
+                    logger.warning("Ícone materialsSpots não encontrado")
                     return None
                 ui.click(*icon_point, times=2, interval=0.3)
                 if ui.sleep(0.2).wait(2, 0.3).until(lambda: ui.snapshot().search(materialsSpots, title_roi)):
@@ -701,7 +701,7 @@ class BossWorkflow(AbstractWorkflow):
         self.local.doubleDropTacetSuppressionFSM.set_enabled(True)
 
         if not self.local.rootFSM.is_active:
-            logger.warning('Task is not active')
+            logger.warning("A tarefa não está ativa")
 
     def __init_workflow(self):
         (

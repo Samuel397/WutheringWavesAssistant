@@ -185,7 +185,7 @@ class Win32GameControlServiceImpl(GameControlService, BaseControlService):
             case 3:
                 self.team_member3()
             case _:
-                logger.warning("Unknown member index")
+                logger.warning("Índice de membro desconhecido")
         return self
 
     def enter(self):
@@ -256,14 +256,14 @@ class Win32ExtendedControlServiceImpl(ExtendedControlService, BaseControlService
         if key is None:
             key = "w"
         elif key not in ["w", "a", "s", "d"]:
-            raise KeyError("Unknown key {}".format(key))
+            raise KeyError("Tecla desconhecida: {}".format(key))
         for _ in range(forward_walk_times):
             keymouse_util.tap_key(self._window_service.window, key, 0.1)
             time.sleep(0.05 if sleep_seconds is None else sleep_seconds)
 
     def get_mouse_position(self):
         pos = keymouse_util.get_mouse_position()
-        logger.debug("当前鼠标坐标: %s", pos)
+        logger.debug("Coordenadas atuais do mouse: %s", pos)
         return pos
 
     def set_mouse_position(self, x: int, y: int):
@@ -272,7 +272,7 @@ class Win32ExtendedControlServiceImpl(ExtendedControlService, BaseControlService
     def get_alt_key_state(self):
         key_state = keymouse_util.get_key_state(win32con.VK_MENU)
         if key_state:
-            logger.debug("ALT正被按下")
+            logger.debug("A tecla ALT está pressionada")
         return key_state
 
     def set_mouse_position_to_bottom_right(self):

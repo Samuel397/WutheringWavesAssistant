@@ -49,7 +49,7 @@ class WindowsBalloonTip:
             hicon = win32gui.LoadImage(hinst, icon_path, win32con.IMAGE_ICON, 0, 0, icon_flags)
             # logger.info(f"图标加载成功: {icon_path}")
         except Exception as e:
-            logger.error(f"加载图标失败: {icon_path}, 错误: {e}")
+            logger.error(f"Falha ao carregar o ícone: {icon_path}; erro: {e}")
             hicon = win32gui.LoadIcon(0, win32con.IDI_APPLICATION)  # 加载默认图标
 
         # 设置通知的标志
@@ -98,4 +98,6 @@ def show_windows_notification(msg: str, wait_time: int = 2, title: str = "WWA"):
         # 启动消息循环，直到消息被清理
         win32gui.PumpMessages()
     except Exception as e:
-        logger.exception(f"发送系统通知失败, msg: {msg}, error: {str(e)}")
+        logger.exception(
+            f"Falha ao enviar a notificação do sistema; mensagem: {msg}; erro: {str(e)}"
+        )

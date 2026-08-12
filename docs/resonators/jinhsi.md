@@ -1,107 +1,107 @@
-# 今汐 (Jinhsi) - 连招逻辑分析
+# Jinhsi — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
+| Campo | Valor |
 |------|------|
-| 角色名称 | 今汐 (Jinhsi) |
-| 角色定位 | MainDPS（主输出） |
-| 元素属性 | 衍射 (Spectro) |
-| 协奏类型 | 黄圈 (concerto_spectro) |
-| 版本 | v1.1 |
-| 源文件 | `src/core/combat/resonator/jinhsi.py` |
+| Ressonador | Jinhsi |
+| Função | MainDPS (DPS principal) |
+| Atributo | Spectro |
+| Tipo de Concerto | Círculo amarelo (`concerto_spectro`) |
+| Versão | v1.1 |
+| Arquivo-fonte | `src/core/combat/resonator/jinhsi.py` |
 
-## 角色机制
+## Mecânicas do Ressonador
 
-今汐拥有最复杂的技能系统之一，有**四个阶段的E技能**：
+Jinhsi possui um dos sistemas mais complexos, com **quatro estados da Habilidade de Ressonância**:
 
-- **E1 流光夕影** - 基础E，作为CD指标
-- **E2 神霓飞芒** - 4段普攻后出现，进入乘岁凌霄状态
-- **E3 逐天取月** - E2连招中出现的升龙
-- **E4 惊龙破空** - 最终的强力喷射
+- **E1 — Luz do Entardecer** - E básico, usado como indicador de recarga
+- **E2 — Brilho Divino** - surge após quatro ataques básicos e inicia o estado aéreo
+- **E3 — Ascensão Lunar** - ataque ascendente disponível durante a sequência de E2
+- **E4 — Dragão Rompe o Céu** - disparo final de maior potência
 
-### 连招路线
+### Rotas de combo
 
-- **常规轴**: a4 → E1 → a3 → E2 → a2 → E3 → a → E4
-- **速喷轴**: a4 → E2 → 闪避取消 → 跳跃 → 闪避 → E4
-- **变奏速喷**: j+a+j+E（120帧限定技）
+- **Rotação normal:** a4 → E1 → a3 → E2 → a2 → E3 → a → E4
+- **Rotação rápida:** a4 → E2 → cancelamento com esquiva → salto → esquiva → E4
+- **Entrada rápida por Intro:** j + a + j + E (dependente de 120 FPS)
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 技能检测
+### Detecção de habilidades
 
-| 检测项 | 逻辑 | 说明 |
+| Item detectado | Lógica | Descrição |
 |--------|------|------|
-| E1 流光夕影 | AND | 基础E，有图标说明E没有CD |
-| E2 神霓飞芒 | AND | 4段普攻后出现 |
-| E2 入场(黄色) | AND | 变奏入场时E2的黄色状态，容差50 |
-| E3 逐天取月 | AND | 升龙技能 |
-| E4 惊龙破空 | AND | 最终喷射 |
-| E4 入场(黄色) | AND | 变奏入场时E4的黄色状态 |
-| 声骸技能 Q | OR | 声骸就绪 |
-| 共鸣解放 R | OR | 大招就绪 |
+| E1 — Luz do Entardecer | AND | E básico; o ícone indica que a habilidade não está em recarga |
+| E2 — Brilho Divino | AND | Surge após quatro ataques básicos |
+| Entrada E2 (amarelo) | AND | Estado amarelo de E2 ao entrar pela Intro, com tolerância 50 |
+| E3 — Ascensão Lunar | AND | Habilidade de ataque ascendente |
+| E4 — Dragão Rompe o Céu | AND | Disparo final |
+| Entrada E4 (amarelo) | AND | Estado amarelo de E4 ao entrar pela Intro |
+| Habilidade de Eco Q | OR | Eco disponível |
+| Liberação de Ressonância R | OR | R disponível |
 
-## 连招片段
+## Fragmentos de combo
 
-| 方法 | 描述 | 说明 |
+| Método | Ação | Descrição |
 |------|------|------|
-| `a4()` | 4段普攻打出E2 | 完整4段普攻+冗余a |
-| `a2()` | 2段快速普攻 | 变奏速喷前置，触发下落攻击 |
-| `E2_full_combo_E4()` | E2速喷直接到E4 | E2+闪避取消+跳跃+闪避→E4 |
-| `E2_full_combo_E3E4()` | E2升龙再喷到E4 | E2+闪避取消+E3+普攻+E4 |
-| `E2_intro_full_combo()` | 变奏速喷 | j+a+j+E（120帧限定技） |
-| `E3_full_combo()` | E3起手套路 | 普攻+E+普攻+E+普攻+E |
-| `E()` | 只打E | E4/E2使用，两次冗余按E |
-| `Q()` | 声骸技能 | 声骸释放 |
-| `R()` | 共鸣解放 | 大招，等待2秒 |
+| `a4()` | Quatro ataques para liberar E2 | Sequência completa + uma entrada redundante de ataque |
+| `a2()` | Dois ataques rápidos | Preparação da entrada rápida; aciona o ataque descendente |
+| `E2_full_combo_E4()` | E2 direto para E4 | E2 + cancelamento com esquiva + salto + esquiva → E4 |
+| `E2_full_combo_E3E4()` | E2, ascensão e E4 | E2 + cancelamento com esquiva + E3 + ataque básico + E4 |
+| `E2_intro_full_combo()` | Sequência rápida de Intro | j + a + j + E (dependente de 120 FPS) |
+| `E3_full_combo()` | Sequência iniciada por E3 | Ataque básico + E + ataque básico + E + ataque básico + E |
+| `E()` | Somente E | Usado para E4/E2; pressiona E duas vezes por redundância |
+| `Q()` | Habilidade de Eco | Ativa o Eco |
+| `R()` | Liberação de Ressonância | Ativa R e espera 2 segundos |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```
-截图检测所有技能状态
-释放声骸 Q()
+Captura a tela e detecta o estado de todas as habilidades
+Ativa o Eco com Q()
 
-1. E2就绪 或 E2入场:
-   ├─ sleep(0.5) + E() 释放E2
-   ├─ sleep(0.5) + E() 再按一次确保释放
+1. E2 pronta ou entrada em campo no estado E2:
+   ├─ sleep(0.5) + E() ativa E2
+   ├─ sleep(0.5) + E() pressiona novamente para garantir a ativação
    └─ return
 
-2. E4就绪 或 E4入场:
-   ├─ E() 释放E4（喷射）
-   ├─ R() 冗余尝试大招
+2. E4 pronta ou entrada em campo no estado E4:
+   ├─ E() ativa E4 (disparo)
+   ├─ R() tenta ativar a Liberação de forma redundante
    └─ return
 
-3. 大招就绪:
-   ├─ R() 开大
-   ├─ E() 冗余尝试E
+3. Liberação pronta:
+   ├─ R() ativa a Liberação
+   ├─ E() tenta ativar E de forma redundante
    └─ return
 
-4. E3就绪:
-   └─ E3_full_combo() 完整E3连招
+4. E3 pronta:
+   └─ E3_full_combo(), combo completo de E3
    └─ return
 
-5. E1就绪（E技能没CD）:
-   ├─ a4() 4段普攻打出E2
-   ├─ 检查E2:
-   │   ├─ E2就绪 → boss血量低用E4速喷，否则随机E4或E3E4
-   │   └─ E2未就绪 → E() + R()
+5. E1 pronta (E não está em recarga):
+   ├─ a4() executa quatro ataques básicos para liberar E2
+   ├─ Verifica E2:
+   │   ├─ E2 pronta → com poucos PV do BOSS, usa o disparo rápido de E4; caso contrário, escolhe aleatoriamente E4 ou E3E4
+   │   └─ E2 não está pronta → E() + R()
    └─ return
 
-6. 兜底（E技能CD中）:
-   ├─ a4() 普攻
-   ├─ 检查E4/E2 → E()
+6. Contingência (E está em recarga):
+   ├─ a4() executa ataques básicos
+   ├─ Verifica E4/E2 → E()
    └─ R()
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **四阶段E技能识别** - 需要识别四种不同的E技能图标状态
-2. **入场颜色特殊处理** - E2和E4入场时图标为黄色而非白色
-3. **速喷两种路线** - E4速喷（快但易被打断）和E3E4升龙再喷（稳但慢）
-4. **Boss血量决策** - 血量低于20%时优先E4速喷，提高击杀效率
-5. **冗余E操作** - 多处冗余按E，防止低帧率打不出技能
-6. **变奏速喷** - COMBO_SEQ_2 中的 j+a+j+E 为120帧限定操作
+1. **Quatro estados de E** - identifica quatro aparências distintas do ícone da Habilidade de Ressonância
+2. **Cor especial na entrada** - os ícones de E2 e E4 ficam amarelos durante a Intro, em vez de brancos
+3. **Duas rotas rápidas** - E4 direto é mais rápido e vulnerável a interrupções; E3 → E4 é mais estável, porém mais lento
+4. **Decisão pelos PV do BOSS** - abaixo de 20%, prioriza E4 direto para encerrar o combate
+5. **Entradas redundantes de E** - repete E em pontos críticos para compensar quedas na taxa de quadros
+6. **Intro rápida** - `j+a+j+E` em `COMBO_SEQ_2` depende de execução a 120 FPS
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 06/02/2026*

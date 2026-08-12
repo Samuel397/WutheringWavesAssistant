@@ -26,6 +26,7 @@ class Language(Enum):
     CHINESE_SIMPLIFIED = QLocale(QLocale.Chinese, QLocale.China)
     CHINESE_TRADITIONAL = QLocale(QLocale.Chinese, QLocale.HongKong)
     ENGLISH = QLocale(QLocale.English)
+    PORTUGUESE_BRAZIL = QLocale(QLocale.Portuguese, QLocale.Brazil)
     AUTO = QLocale()
 
 
@@ -59,7 +60,8 @@ class Config(QConfig):
     dpiScale = OptionsConfigItem(
         "MainWindow", "DpiScale", "Auto", OptionsValidator([1, 1.25, 1.5, 1.75, 2, "Auto"]), restart=True)
     language = OptionsConfigItem(
-        "MainWindow", "Language", Language.AUTO, OptionsValidator(Language), LanguageSerializer(), restart=True)
+        "MainWindow", "Language", Language.PORTUGUESE_BRAZIL,
+        OptionsValidator(Language), LanguageSerializer(), restart=True)
 
     # # Material
     # blurRadius  = RangeConfigItem("Material", "AcrylicBlurRadius", 15, RangeValidator(0, 40))
@@ -70,22 +72,21 @@ class Config(QConfig):
 
 
 YEAR = datetime.now().year
-AUTHOR = "wakening"
+AUTHOR = "wakening / Samuel397"
 VERSION = __version__
-HELP_URL = "https://github.com/wakening/WutheringWavesAssistant?tab=readme-ov-file#-%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97"
-REPO_URL = "https://github.com/wakening/WutheringWavesAssistant"
-EXAMPLE_URL = "https://github.com/wakening"
-FEEDBACK_URL = "https://github.com/wakening/WutheringWavesAssistant/issues"
-RELEASE_URL = "https://github.com/wakening/WutheringWavesAssistant/releases/latest"
+HELP_URL = "https://github.com/Samuel397/WutheringWavesAssistant#readme"
+REPO_URL = "https://github.com/Samuel397/WutheringWavesAssistant"
+EXAMPLE_URL = "https://github.com/Samuel397"
+FEEDBACK_URL = "https://github.com/Samuel397/WutheringWavesAssistant/issues"
+RELEASE_URL = "https://github.com/Samuel397/WutheringWavesAssistant/releases/latest"
 ZH_SUPPORT_URL = "https://afdian.com/a/wakening"
 EN_SUPPORT_URL = "https://afdian.com/a/wakening"
-CHANGELOG_URL = "https://github.com/wakening/WutheringWavesAssistant/CHANGELOG.md" # TODO terminal
+CHANGELOG_URL = "https://github.com/Samuel397/WutheringWavesAssistant/blob/main/CHANGELOG.md" # TODO terminal
 
 VERSION_URLS = [
-    "https://cnb.cool/github.wakening/WutheringWavesAssistant/-/git/raw/main/src/__init__.py",
-    "https://ghfast.top/https://raw.githubusercontent.com/wakening/WutheringWavesAssistant/main/src/__init__.py",
-    "https://raw.githubusercontent.com/wakening/WutheringWavesAssistant/main/src/__init__.py",
-    "https://cdn.jsdelivr.net/gh/wakening/WutheringWavesAssistant@main/src/__init__.py",
+    "https://ghfast.top/https://raw.githubusercontent.com/Samuel397/WutheringWavesAssistant/main/src/__init__.py",
+    "https://raw.githubusercontent.com/Samuel397/WutheringWavesAssistant/main/src/__init__.py",
+    "https://cdn.jsdelivr.net/gh/Samuel397/WutheringWavesAssistant@main/src/__init__.py",
 ]
 
 
@@ -184,7 +185,7 @@ class ParamConfig(QConfig):
     pioneerPodcastOpen = ConfigItem("Daily", "PioneerPodcastOpen", False, BoolValidator())
 
     # Game
-    gameLanguage = ConfigItem("Game", "GameLanguage", None)
+    gameLanguage = ConfigItem("Game", "GameLanguage", "pt")
     gamePath = ConfigItem("Game", "GamePath", "Auto", GameFolderValidator())
     device = ConfigItem("Game", "Device", None, OptionsValidator([None, "GPU", "CPU"]))
 

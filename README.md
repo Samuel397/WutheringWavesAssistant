@@ -1,160 +1,174 @@
 <div align="center">
-<img src="src/gui/resource/images/logo.ico" alt="LOGO" width="192" height="192" />
+<img src="src/gui/resource/images/logo.ico" alt="Logo do Wuthering Waves Assistant" width="192" height="192" />
 
-# Wuthering Waves Assistant
+# Wuthering Waves Assistant — PT-BR
 
-![license](https://img.shields.io/github/license/wakening/WutheringWavesAssistant)
-![commit](https://img.shields.io/github/commit-activity/m/wakening/WutheringWavesAssistant?color=%23ff69b4)  
-[![QQ](https://img.shields.io/badge/QQ-加群-blue?logo=tencentqq)](https://qm.qq.com/q/tDWAi0LCj8)
-[![Discord](https://img.shields.io/badge/Discord-加入社区-5865F2?logo=discord&logoColor=white)](https://discord.gg/Ug8aXjvp)  
+[![Licença AGPL-3.0](https://img.shields.io/github/license/Samuel397/WutheringWavesAssistant)](LICENSE)
+[![Projeto original](https://img.shields.io/badge/upstream-wakening%2FWutheringWavesAssistant-2ea44f)](https://github.com/wakening/WutheringWavesAssistant)
 
-鸣潮自动化助手
-
-**QQ群: 1039535103**
+Fork brasileiro do Wuthering Waves Assistant, com interface e reconhecimento do jogo em Português (Brasil).
 
 </div>
 
-
 ![Wuthering Waves Assistant](assets/static/HomePage.png)
 
+## Sobre este fork
 
-## 📌 使用指南
+Este repositório preserva o histórico e a licença AGPL-3.0 do projeto original de
+[wakening](https://github.com/wakening/WutheringWavesAssistant). O objetivo do fork é tratar PT-BR como idioma de primeira classe:
 
-- 点击转到 [下载页](https://github.com/wakening/WutheringWavesAssistant/releases/latest)，按描述选择合适的版本下载，看不懂就选300M左右那个，网速不行就去群里下  
-- 下载后解压，剪切到一个路径没有中文的目录
-- 双击一键更新并选择合适的更新渠道（无梯子建议选国内加速）升级到最新，双击WWA.exe启动脚本
-- Windows系统设置：关闭HDR（默认关闭），关闭英伟达显卡滤镜（默认关闭），微星小飞机关闭或挪到左下角（不认识就不用管）
-- 游戏内设置：
-  - 简体中文，重置按键，重置滤镜，重置亮度  
-  - 控制 镜头设置：  
-    - 镜头重置：开  
-    - 移动镜头修正：开  
-    - 战斗镜头修正：开  
-- MOD在刷boss时需要关闭，在游戏内按F6，F6在下面就Fn + F6
+- interface completa do assistente em Português (Brasil);
+- reconhecimento por OCR dos textos oficiais do jogo em português;
+- nomes de personagens, chefes, desafios, regiões, botões e estados de combate em PT-BR;
+- testes de cobertura para evitar que uma atualização deixe tarefas sem tradução;
+- documentação e mensagens de diagnóstico compreensíveis para usuários brasileiros.
 
----
+As traduções usadas para reconhecer o jogo são baseadas nos textos oficiais presentes nos arquivos da versão instalada. Não é feita tradução automática durante a execução.
 
-## 🔧 从源码安装（Conda）
+## Recursos
 
-<details>
-<summary>点击这里展开/折叠</summary>
+- tarefas diárias e semanais;
+- combate automático com identificação da equipe;
+- desafios, chefes e coleta de Ecos;
+- exploração e rotas;
+- avanço de diálogos e cenas da história;
+- síntese e gerenciamento de Ecos;
+- execução em segundo plano nos fluxos que usam mensagens de janela.
 
-### 1️⃣ 安装 Conda
+Nem todo recurso é apropriado para toda conta ou versão do jogo. Comece sempre com uma tarefa curta e observe a primeira execução depois de cada atualização.
 
-群文件里有，或点击 [Miniconda官方链接](https://repo.anaconda.com/miniconda/Miniconda3-py312_24.11.1-0-Windows-x86_64.exe) 下载
-Miniconda  
-安装时点击选项：  
-Next -> I agree ->  Just Me (recommended) -> Next -> Next ->  
-Add miniconda3 to my PATH environment variable -> Install  
-安装完成后，任意打开一个**新的 powershell 窗口**，准备初始化conda
+## Requisitos do jogo
+
+- Windows 10 ou 11;
+- texto do jogo em **Português**;
+- atalhos de teclado restaurados para o padrão;
+- brilho e filtros do jogo restaurados para o padrão;
+- HDR e filtros de GPU desativados;
+- resolução 16:9 recomendada;
+- câmera: redefinição, correção de movimento e correção de combate ativadas;
+- overlays que cobrem a interface do jogo desativados ou movidos para fora das regiões reconhecidas.
+
+O assistente deve ser iniciado como administrador para que captura e comandos de janela funcionem de forma consistente.
+
+## Instalação a partir do código-fonte
+
+### 1. Instale o Conda e o Git
+
+Instale o [Miniconda para Python 3.12](https://repo.anaconda.com/miniconda/Miniconda3-py312_24.11.1-0-Windows-x86_64.exe) e o [Git para Windows](https://git-scm.com/download/win).
+
+Durante a instalação do Miniconda, habilite a opção de adicioná-lo ao `PATH`. Depois, abra um novo PowerShell e execute:
+
 ```powershell
 conda -V
 conda init powershell
 ```
-执行后没有红色异常文字，这步就完成了，**关闭 powershell 窗口**
 
-### 2️⃣ 安装 Git
+Feche e abra o PowerShell novamente após a inicialização.
 
-前往 [Git 官网（右下角有个显示器，点击 Download for Windows）](https://git-scm.com/) 下载并安装 Git，全程保持默认设置。
+### 2. Clone o fork
 
-### 3️⃣ 准备环境
-
-- 选择一个**路径中不包含中文**的文件夹来存放本项目。
-- **以管理员身份**打开一个**新的 PowerShell 窗口**。
-
-### 4️⃣ 下载项目
+Use uma pasta cujo caminho não contenha caracteres especiais:
 
 ```powershell
-git clone https://github.com/wakening/WutheringWavesAssistant.git
-
-或者使用免费的国内加速代理，任选其一：
-git clone https://ghproxy.net/https://github.com/wakening/WutheringWavesAssistant.git
-git clone https://ghfast.top/https://github.com/wakening/WutheringWavesAssistant.git
-git clone https://gitclone.com/github.com/wakening/WutheringWavesAssistant.git
+git clone https://github.com/Samuel397/WutheringWavesAssistant.git
+cd WutheringWavesAssistant
 ```
 
-### 5️⃣ 安装依赖
+### 3. Prepare o ambiente
 
-管理员身份打开powershell，设置允许执行脚本，执行过一次即可
+Abra o PowerShell como administrador. Na primeira instalação, permita a execução de scripts para o usuário atual:
+
 ```powershell
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
-开始安装依赖
+
+Crie o ambiente usando o instalador do projeto:
+
 ```powershell
-cd WutheringWavesAssistant
 ./scripts/rebuild_conda_env.ps1
 ```
 
-按照提示选择GPU或CPU环境安装，新N卡输入1，新老N卡都可以输入4，A卡输入3， 回车，等待脚本执行完成，若失败可以重跑，有红色文字即为失败，黄色等为正常  
+Escolha a variante adequada à sua GPU. A opção CPU funciona como alternativa quando não houver um runtime de GPU compatível.
 
-### 6️⃣ 配置文件
+### 4. Inicie o assistente
 
-- **老用户**（使用过 `mc_auto_boss` 的用户）：请复制 `config.yaml` 到本目录并覆盖  
-- **新用户**：直接运行，并在页面上⭐️页面上修改参数，仅连招需修改config.yaml，其他参数修改config.yaml无效  
+Ative o ambiente criado pelo instalador e execute:
 
-### 7️⃣ 启动脚本
-
-**务必以管理员身份运行**，否则无法正常工作。
-
-激活英伟达GPU环境wwa-cuda，cpu则是wwa-cpu
 ```powershell
 conda activate wwa-cuda
-```
-激活后运行程序
-```powershell
 python main.py
 ```
 
-若能正常运行，后续可双击启动器 WWA.exe 运行，AMD GPU用户到群里下载CPU版启动器  
+Se você instalou a variante CPU, use o nome de ambiente correspondente. Depois da primeira inicialização bem-sucedida, o `WWA.exe` também pode ser usado como lançador.
 
-### 8️⃣ 更新脚本
+## Configuração em PT-BR
+
+1. Abra as configurações do assistente.
+2. Em **Idioma da interface**, selecione **Português (Brasil)**.
+3. Na tela inicial, em **Texto do jogo**, selecione **Português (Brasil)**.
+4. Confirme que o próprio Wuthering Waves está usando Português.
+5. Comece com apenas uma tarefa habilitada e acompanhe o terminal do assistente.
+
+O idioma da interface e o idioma reconhecido no jogo são configurações diferentes. Os dois devem estar corretos.
+
+## Desenvolvimento e testes
+
+O projeto exige Python 3.10–3.12. Com o ambiente de desenvolvimento ativo:
 
 ```powershell
-git pull
+python -m pytest -q `
+  tests/core/i18n_pt_test.py `
+  tests/core/runtime_messages_pt_test.py `
+  tests/gui/test_pt_br_translation.py `
+  tests/service/legacy_pt_ocr_test.py `
+  -c tests/pytest.ini
 ```
 
-若正常不报错，后续可双击更新器 WWA_updater.exe 更新并运行  
-更新后若无法运行或窗口出现闪烁，可看下方常见问题  
+Esse comando executa a suíte hermética de PT-BR. A suíte completa herdada do
+upstream inclui testes manuais que enviam comandos ao jogo, além de casos que
+dependem de módulos opcionais; não a execute com o jogo aberto sem revisar e
+isolar previamente esses testes.
 
-### 9️⃣ 管理环境
+Os testes de localização verificam, entre outros pontos:
 
-查看conda里所有的环境:
+- carregamento do catálogo Qt `pt_BR`;
+- cobertura das chaves de OCR usadas pelos fluxos executáveis;
+- identificação de personagens em português;
+- páginas e estados que antes aceitavam apenas chinês ou inglês;
+- ausência de traduções vazias nos recursos habilitados.
+
+## Manter o fork atualizado
+
+O repositório original deve permanecer configurado como `upstream`:
+
 ```powershell
-conda env list
-```
-卸载环境
-```powershell
-conda remove --name wwa-cuda --all -y
+git remote add upstream https://github.com/wakening/WutheringWavesAssistant.git
+git fetch upstream
+git rebase upstream/main
 ```
 
----
+Depois de cada atualização do jogo, rode os testes de cobertura e valide uma tarefa curta antes de usar fluxos longos.
 
-## ❓ 常见问题
+## Solução de problemas
 
-### ⚠️ 脚本无法运行？
+### O assistente não reconhece a tela
 
-确保 **PowerShell 以管理员身份运行**，并且 Conda 和 Git 均已正确安装。
+- confirme que **Texto do jogo** está configurado como Português (Brasil) tanto no jogo quanto no assistente;
+- restaure brilho, filtros e atalhos;
+- desative HDR e overlays;
+- confirme que a janela do jogo está em resolução 16:9;
+- consulte `logs/wwa.log` e a página **Terminal**.
 
-### ⚠️ 依赖安装失败？
+### A equipe não é reconhecida
 
-重新运行 `./scripts/rebuild_conda_env.ps1` 以重建环境。
+Abra a tela de equipe e confirme que os nomes dos personagens estão visíveis. Personagens adicionados em versões posteriores podem exigir atualização do mapa de textos do fork.
 
-</details>
+### Uma tarefa entra em repetição
 
----
+Interrompa a execução pelo botão do assistente. Não deixe uma tarefa repetir indefinidamente após atualização do jogo; registre a tela e o trecho correspondente do log para corrigirmos o reconhecimento.
 
-## ❓ 常见问题
+## Licença e aviso
 
-### ⚠️ 运行时报错？
+Este fork é distribuído sob a [GNU Affero General Public License v3.0](LICENSE), assim como o projeto original. Modificações distribuídas ou oferecidas como serviço devem respeitar as obrigações da AGPL-3.0.
 
-加入我们的 **QQ群 (1039535103)** 交流或提交 Issue 反馈问题。
-
----
-
-## 免责声明
-
-本项目为本人学习python所建，请下载后24小时内删除  
-项目基于OCR文字识别、YOLO目标检测，纯图像识别，完全开源，永久免费，禁止售卖  
-脚本是否有使用风险，一切解释权均由kuro所有，建议手刷不要使用脚本  
-
-
+O projeto usa OCR, visão computacional e automação de entrada. O uso de automação pode contrariar os termos do jogo e causar sanções à conta. Use por sua conta e risco. Este projeto é gratuito e de código aberto; sua venda é proibida pelos termos definidos pelo projeto original.

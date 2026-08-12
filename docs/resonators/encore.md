@@ -1,104 +1,104 @@
-# 安可 (Encore) - 连招逻辑分析
+# Encore — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
+| Campo | Valor |
 |------|------|
-| 角色名称 | 安可 (Encore) |
-| 角色定位 | MainDPS（主输出） |
-| 元素属性 | 熔融 (Fusion) |
-| 协奏类型 | 红圈 (concerto_fusion) |
-| 版本 | 常驻 |
-| 源文件 | `src/core/combat/resonator/encore.py` |
+| Ressonador | Encore |
+| Função | MainDPS (DPS principal) |
+| Atributo | Fusion |
+| Tipo de Concerto | Círculo vermelho (`concerto_fusion`) |
+| Versão | Permanente |
+| Arquivo-fonte | `src/core/combat/resonator/encore.py` |
 
-## 角色机制
+## Mecânicas do Ressonador
 
-安可的核心机制是**黑咩大暴走**状态：
+O mecanismo central de Encore é o estado **Cosmos Rave**:
 
-- 释放 R（共鸣解放）后进入黑咩大暴走状态
-- 暴走状态下 E 技能变为强化版，连续 E+普攻+E 打满一套
-- 能量满（1格）时可释放重击
+- R (Liberação de Ressonância) ativa Cosmos Rave
+- Durante o estado, E recebe uma versão aprimorada e a rotação usa E + ataques básicos + E
+- Com a energia cheia (um segmento), Encore pode executar um ataque pesado
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 能量检测
+### Detecção de energia
 
-| 检测项 | 检测方式 | 说明 |
+| Item detectado | Método | Descrição |
 |--------|----------|------|
-| 能量满 | 检测能量条末端像素为红色 `(97,121,255)` | 满为1，未满为0 |
+| Energia cheia | Detecta o pixel vermelho `(97,121,255)` no fim da barra | Retorna 1 quando cheia e 0 caso contrário |
 
-### 技能检测
+### Detecção de habilidades
 
-| 检测项 | 图标颜色 | 逻辑 | 说明 |
+| Item detectado | Cor do ícone | Lógica | Descrição |
 |--------|----------|------|------|
-| 共鸣技能 E | 白色 `(255,255,255)` | OR | E技能就绪 |
-| 声骸技能 Q | 白色 `(255,255,255)` | OR | 声骸就绪 |
-| 共鸣解放 R | 白色 `(255,255,255)` | OR | 大招就绪 |
-| 黑咩大暴走 | 蓝紫色 `(73,81,181)` | AND | 暴走状态（检测能量条整体颜色变化） |
+| Habilidade de Ressonância E | Branco `(255,255,255)` | OR | E disponível |
+| Habilidade de Eco Q | Branco `(255,255,255)` | OR | Eco disponível |
+| Liberação de Ressonância R | Branco `(255,255,255)` | OR | R disponível |
+| Cosmos Rave | Azul-arroxeado `(73,81,181)` | AND | Detecta a mudança geral de cor da barra durante o estado aprimorado |
 
-## 连招片段
+## Fragmentos de combo
 
-| 方法 | 描述 | 说明 |
+| Método | Ação | Descrição |
 |------|------|------|
-| `E()` | E技能 | 单独的E技能，等待1.9秒 |
-| `Ea()` | E+连续普攻 | E接多段冗余普攻确保打出派生 |
-| `a5()` | 5段普攻 | 完整5段普攻，拆分了长等待 |
-| `a3()` | 3段快速普攻 | 固定频率连点，脱离空中状态 |
-| `a2()` | 后2段普攻 | 普攻第4-5段 |
-| `R()` | 共鸣解放 | 大招，等待2.63秒 |
-| `Ea11E()` | 暴走模式连招 | E+11次普攻+E，暴走状态主要输出 |
-| `z()` | 重击 | 长按0.7秒重击，等待3秒 |
-| `Qa3()` | 梦魇摩托 | 声骸+3段普攻骑行 |
-| `Q()` | 普通声骸 | 仅释放声骸 |
+| `E()` | Habilidade de Ressonância | Usa somente E e espera 1,9 segundo |
+| `Ea()` | E + ataques básicos | E seguido de entradas redundantes de ataque para garantir o derivado |
+| `a5()` | Cinco ataques básicos | Sequência completa, com a espera longa fragmentada |
+| `a3()` | Três ataques básicos rápidos | Cliques em frequência fixa para sair do estado aéreo |
+| `a2()` | Dois ataques básicos finais | Quarto e quinto ataques da sequência |
+| `R()` | Liberação de Ressonância | Ativa R e espera 2,63 segundos |
+| `Ea11E()` | Combo de Cosmos Rave | E + 11 ataques básicos + E; principal sequência do estado aprimorado |
+| `z()` | Ataque pesado | Mantém pressionado por 0,7 segundo e espera 3 segundos |
+| `Qa3()` | Eco motocicleta Pesadelo | Eco + três ataques básicos durante o deslocamento |
+| `Q()` | Eco comum | Ativa somente o Eco |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```
-入场: sleep(0.1) + a3() 打几个普攻（触发下落攻击）
+Entrada em campo: sleep(0.1) + a3() executa alguns ataques básicos (ativa o ataque descendente)
 
-截图检测所有技能状态
+Captura a tela e detecta o estado de todas as habilidades
 
-1. 黑咩大暴走状态:
-   └─ Ea11E() 暴走连招
+1. Estado Cosmos Rave:
+   └─ Ea11E(), combo do estado Cosmos Rave
    └─ return
 
-2. 能量满:
-   └─ z() 重击
+2. Energia cheia:
+   └─ z() executa um ataque pesado
    └─ return
 
-3. 大招就绪（空中放不出R）:
-   ├─ R() 开大
-   ├─ Ea11E() 暴走连招
-   ├─ 检查能量满 → z() 重击
+3. Liberação pronta (R não pode ser ativado no ar):
+   ├─ R() ativa a Liberação
+   ├─ Ea11E(), combo do estado Cosmos Rave
+   ├─ Verifica se a energia está cheia → z() executa um ataque pesado
    └─ return
 
-4. 有E:
-   ├─ 66%概率 → Ea() E接普攻派生
-   ├─ 34%概率 → E() 仅E
+4. Com E:
+   ├─ 66% de chance → Ea(), com E seguido do ataque básico derivado
+   ├─ 34% de chance → E(), somente E
    └─ return
 
-5. 有声骸:
-   ├─ 随机梦魇/普通摩托
+5. Com Eco:
+   ├─ Escolhe aleatoriamente entre a motocicleta Pesadelo e a comum
    └─ E()
    └─ return
 
-6. 兜底 → a2() 普攻
-   ├─ 大招图标二次检测（切人时先红一下导致颜色不匹配）
-   │   ├─ 有R → R() + Ea11E()
-   │   └─ 检查暴走 + 能量满 → z()
-   ├─ 有声骸 → 随机摩托
-   └─ 无声骸 → E()
+6. Contingência → a2(), com ataques básicos
+   ├─ Verifica o ícone da Liberação uma segunda vez (ao trocar de Ressonador, ele fica vermelho por um instante e a cor pode não corresponder)
+   │   ├─ Com R → R() + Ea11E()
+   │   └─ Verifica o estado Cosmos Rave e a energia cheia → z()
+   ├─ Com Eco → escolhe aleatoriamente uma motocicleta
+   └─ Sem Eco → E()
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **暴走状态检测** - 通过能量条颜色变化识别黑咩大暴走状态
-2. **大招二次检测** - 大招图标在切人时会先红一下导致首次检测失败，末尾增加二次检测
-3. **入场a3** - 入场先打几个普攻触发下落攻击
-4. **随机摩托** - 50%概率选择梦魇摩托或普通摩托
-5. **重击判断** - 能量满时优先重击消耗能量
-6. **Ea频率优化** - Ea()中拆分了长等待，增加普攻频率确保打出派生
+1. **Detecção de Cosmos Rave** - identifica o estado pela mudança de cor da barra de energia
+2. **Segunda verificação de R** - ao trocar de Ressonador, o ícone pode aparecer vermelho e falhar na primeira leitura; por isso, R é verificado novamente ao final
+3. **Entrada com `a3()`** - executa ataques básicos antes da rotação principal para acionar o ataque descendente
+4. **Motocicleta aleatória** - escolhe com 50% de chance entre o Eco Pesadelo e o comum
+5. **Prioridade do ataque pesado** - quando a energia está cheia, prioriza o ataque pesado para consumi-la
+6. **Otimização de `Ea()`** - fragmenta a espera e aumenta a frequência dos ataques básicos para garantir o derivado
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 06/02/2026*

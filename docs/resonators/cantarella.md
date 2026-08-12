@@ -1,52 +1,52 @@
-# 坎特蕾拉 (Cantarella) - 连招逻辑分析
+# Cantarella — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
+| Campo | Valor |
 |------|------|
-| 角色名称 | 坎特蕾拉 (Cantarella) |
-| 角色定位 | Support（辅助） |
-| 元素属性 | 湮灭 (Havoc) |
-| 协奏类型 | 紫圈 (concerto_havoc) |
-| 版本 | v2.2 |
-| 源文件 | `src/core/combat/resonator/cantarella.py` |
+| Ressonador | Cantarella |
+| Função | Suporte |
+| Atributo | Havoc |
+| Tipo de Concerto | círculo roxo (concerto_havoc) |
+| Versão | v2.2 |
+| Arquivo-fonte | `src/core/combat/resonator/cantarella.py` |
 
-## 角色机制
+## Mecânicas do Ressonador
 
-坎特蕾拉的 `BaseCantarella` 中定义了协奏能量检测（紫圈），但能量格数检测、共鸣技能、声骸技能、共鸣解放的检测方法均已被注释掉，尚未启用。
+`BaseCantarella` define o detector de Energia de Concerto (círculo roxo), mas os métodos de detecção dos segmentos de energia, da Habilidade de Ressonância, da Habilidade de Eco e da Liberação continuam comentados e, portanto, desativados.
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 已初始化（检测器对象已创建）
+### Inicializado (detector criado)
 
-| 检测项 | 检测方式 | 说明 |
+| Item detectado | Método de detecção | Descrição |
 |--------|----------|------|
-| 协奏能量 | `concerto_havoc()` 紫圈 | 检测器已创建，但 `is_concerto_energy_ready()` 方法被注释 |
+| Energia de Concerto | círculo roxo de `concerto_havoc()` | O detector existe, mas o método `is_concerto_energy_ready()` está comentado |
 
-### 已注释（待启用）
+### Comentado (ativação pendente)
 
-| 检测项 | 说明 |
+| Item detectado | Descrição |
 |--------|------|
-| 协奏能量检测方法 | `is_concerto_energy_ready()` 方法被注释 |
-| 能量1-4格 | 血条上方4格能量条 |
-| 共鸣技能 E | E技能就绪 |
-| 声骸技能 Q | 声骸就绪 |
-| 共鸣解放 R | 大招就绪 |
+| Método de detecção de Energia de Concerto | `is_concerto_energy_ready()` está comentado |
+| Energia de 1 a 4 segmentos | Quatro segmentos acima da barra de PV |
+| Habilidade de Ressonância E | Habilidade E pronta |
+| Habilidade de Eco Q | Eco pronto |
+| Liberação de Ressonância R | Liberação pronta |
 
-## 连招片段
+## Fragmentos de combo
 
-| 方法 | 描述 | 说明 |
+| Método | Ação | Descrição |
 |------|------|------|
-| `a2()` | 2段普攻 | 快速两段 |
-| `a3()` | 3段普攻 | 三段普攻 |
-| `a4()` | 4段普攻 | 四段普攻 |
-| `Eaa()` | E+2段普攻 | E技能接两段普攻 |
-| `E()` | E技能 | 单独E技能 |
-| `z()` | 重击 | 长按0.50秒 |
-| `Q()` | 声骸技能 | 声骸释放 |
-| `R()` | 共鸣解放 | 大招 |
+| `a2()` | Dois ataques básicos | Duas entradas rápidas |
+| `a3()` | Três ataques básicos | Sequência de três ataques |
+| `a4()` | Quatro ataques básicos | Sequência de quatro ataques |
+| `Eaa()` | E + dois ataques | Habilidade de Ressonância seguida de dois ataques básicos |
+| `E()` | Habilidade de Ressonância | Uma única ativação de E |
+| `z()` | Ataque pesado | Mantém o ataque pressionado por 0,50 segundo |
+| `Q()` | Habilidade de Eco | Ativação do Eco |
+| `R()` | Liberação de Ressonância | Ativação de R |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```python
 def combo(self):
@@ -68,25 +68,25 @@ def combo(self):
 ```
 
 ```
-1. a3() 三段普攻
-2. R() 尝试大招
-3. 66%概率进入重击分支:
-   ├─ z() 重击
-   ├─ 66%概率再 z() 一次
-   ├─ E() 技能
-   └─ 66%概率 a3() / 34%概率 a4()
-4. 34%概率仅 a3()
-5. E() 技能
-6. Q() 声骸
+1. a3() executa três ataques básicos
+2. R() tenta ativar a Liberação
+3. Há 66% de chance de entrar na ramificação de ataque pesado:
+   ├─ z() executa um ataque pesado
+   ├─ Há 66% de chance de executar z() novamente
+   ├─ E() ativa a habilidade
+   └─ Há 66% de chance de usar a3() / 34% de chance de usar a4()
+4. Há 34% de chance de executar apenas a3()
+5. E() ativa a habilidade
+6. Q() ativa o Eco
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **随机分支** - 使用 `random_float()` 在多处引入随机性，避免固定模式
-2. **无状态检测** - 不依赖截图检测，按固定流程+随机分支执行
-3. **已注册** - 已注册到 `resonator_map`，使用自己的 `combo()` 方法
-4. **检测待开发** - `BaseCantarella` 中的能量和技能检测已定义但被注释，待后续启用
+1. **Ramificações aleatórias** - usa `random_float()` em vários pontos para evitar um padrão rígido
+2. **Execução sem detecção de estado** - segue um fluxo fixo com ramificações aleatórias, sem depender de capturas de tela
+3. **Registro próprio** - está em `resonator_map` e usa seu próprio método `combo()`
+4. **Detecção pendente** - os detectores de energia e habilidades de `BaseCantarella` estão definidos, mas comentados
 
 ---
 
-*最后更新: 2026-02-07*
+*Última atualização: 07/02/2026*

@@ -184,7 +184,7 @@ class TileGrid:
 
                 if tile is None:
                     raise ValueError(
-                        f"missing tile: "
+                        f"Bloco ausente: "
                         f"({tx}, {ty})"
                     )
 

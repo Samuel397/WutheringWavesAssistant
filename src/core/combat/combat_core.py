@@ -239,7 +239,7 @@ class ColorChecker(BaseChecker):
 
     def check(self, img: np.ndarray) -> bool:
         if self.points is None or len(self.points) == 0:
-            raise ValueError("Points is empty")
+            raise ValueError("A lista de pontos está vazia")
 
         dpt = DynamicPointTransformer(img)
 
@@ -275,7 +275,7 @@ class ColorChecker(BaseChecker):
                 if not is_color_match:
                     return False
             return True
-        raise NotImplementedError("Unknown logic")
+        raise NotImplementedError("Lógica desconhecida")
 
     @staticmethod
     def concerto_spectro():
@@ -362,11 +362,11 @@ class BaseCombo:
             if not key_action:
                 if key == "a":
                     if press_time > 0.2:
-                        raise ValueError("普攻按压时间不可大于0.2，默认统一填写0.05")
+                        raise ValueError("O tempo de pressionamento do ataque básico não pode ser maior que 0,2; use 0,05")
                     self.control_service.fight_click(seconds=press_time)
                 elif key == "z":
                     if press_time < 0.3:
-                        raise ValueError("重击按压时间不可小于0.3，默认统一写0.5")
+                        raise ValueError("O tempo de pressionamento do ataque pesado não pode ser menor que 0,3; use 0,5")
                     self.control_service.fight_click(seconds=press_time)
                 elif key == "w":
                     pass
@@ -405,7 +405,7 @@ class BaseCombo:
                         self.control_service.key_up(key, press_time)
                     key_down_caches.discard(key)
                 else:
-                    logger.warning("Unknown key action '{}'".format(key_action))
+                    logger.warning("Ação de tecla desconhecida: '{}'".format(key_action))
             if wait_time <= 0:
                 continue
             # 最后一下可合轴，显示传入False表示无需等待后摇结束

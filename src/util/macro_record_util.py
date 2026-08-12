@@ -224,7 +224,7 @@ class MacroRecorder:
             self.mouse_hook = user32.SetWindowsHookExW(WH_MOUSE_LL, self._mouse_func, None, 0)
 
         if not self.kb_hook:
-            raise RuntimeError("键盘Hook失败")
+            raise RuntimeError("Falha ao instalar o hook do teclado")
 
     def stop_hook(self):
         if self.kb_hook:
@@ -252,14 +252,14 @@ class MacroRecorder:
         self.recording = False
         self.trigger_wait = False
         gc.enable()
-        logger.info(f"录制结束，共 {len(self.events)} 条事件")
+        logger.info(f"Gravação encerrada; {len(self.events)} eventos registrados")
 
     def save(self, path):
         with open(path, "w", encoding="utf-8") as f:
             for ms, vk, is_down in self.events:
                 f.write(f"{ms},{vk},{1 if is_down else 0}\n")
 
-        logger.info(f"保存完成: {path}")
+        logger.info(f"Arquivo salvo: {path}")
 
 
 # =========================
@@ -279,7 +279,7 @@ def start_esc(recorder):
 
         while True:
             if user32.GetAsyncKeyState(0x1B) & 0x8000:
-                logger.info("ESC触发，停止并保存")
+                logger.info("ESC acionado; interrompendo e salvando")
                 recorder.stop_record()
                 return
             time.sleep(0.1)  # ✔ 减少调度抖动
@@ -321,11 +321,11 @@ def run(path: str, hwnd=None, points=None):
         recorder.start_hook()
         start_esc(recorder)
 
-        logger.info("准备就绪，等待开始")
+        logger.info("Pronto; aguardando o início")
         wait_result = trigger.wait_color(should_stop=lambda: not recorder.trigger_wait)
 
         if wait_result:
-            logger.info("开始录制（按ESC保存退出）")
+            logger.info("Gravação iniciada (pressione ESC para salvar e sair)")
             recorder.start_record()
 
             message_loop(recorder)
@@ -334,7 +334,7 @@ def run(path: str, hwnd=None, points=None):
             recorder.save(path)
             return True
         else:
-            logger.info("录制开始前退出，无文件生成")
+            logger.info("Encerrado antes do início da gravação; nenhum arquivo foi criado")
             recorder.stop_hook()
             return False
     finally:

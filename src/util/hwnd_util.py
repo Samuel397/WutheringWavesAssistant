@@ -133,7 +133,7 @@ def get_hwnd(filter_path: str | None = None, force: bool = False) -> int | None:
     :return:
     """
     if filter_path is not None:
-        logger.debug(f"get_hwnd入参: {filter_path}")
+        logger.debug(f"Parâmetro de get_hwnd: {filter_path}")
     hwnds = get_hwnds()
     if not hwnds:
         return None
@@ -272,7 +272,7 @@ def enable_dpi_awareness():
     try:
         ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE)
     except Exception:
-        logger.exception("Failed to enable DPI awareness")
+        logger.exception("Falha ao ativar o reconhecimento de DPI")
 
 
 # 窗口的大小和位置在不同的缩放设置下可能会分为“实际大小”和“逻辑大小”：
@@ -372,7 +372,7 @@ def get_window_dpi(hwnd):
 
 
 def set_window_left_top(hwnd=None):
-    logger.debug("将窗口移动至左上角")
+    logger.debug("Movendo a janela para o canto superior esquerdo")
     if hwnd is None:
         hwnd = get_hwnd()
 
@@ -477,7 +477,7 @@ def set_window_left_top_and_below_another(hwnd, hwnd_another):
 
 
 def set_window_not_topmost(hwnd):
-    logger.debug("取消窗口置顶")
+    logger.debug("Removendo a janela do primeiro plano permanente")
     win32gui.SetWindowPos(
         hwnd,
         win32con.HWND_NOTOPMOST,
@@ -487,7 +487,7 @@ def set_window_not_topmost(hwnd):
 
 
 def set_hwnd_center(hwnd=None):
-    logger.debug("将窗口居中")
+    logger.debug("Centralizando a janela")
     if hwnd is None:
         hwnd = get_hwnd()
     # 获取屏幕工作区的宽度和高度（排除任务栏）

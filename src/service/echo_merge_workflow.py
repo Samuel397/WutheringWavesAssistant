@@ -38,19 +38,19 @@ def globalDispatcher(ctx: NodeContext, **kwargs) -> Optional[str]:
     # 已在终端页
     is_match = ctx.page_service.is_match(oq.results, I18nPage.Terminal.PAGE)
     if is_match:
-        logger.debug("已在终端")
+        logger.debug("A tela Terminal já está aberta")
         return I18nPage.Terminal.PAGE
 
     # 未知页面，全局扫描，尝试回到主页
     global_result = ctx.page_service.global_page_action(oq.results)
     if global_result:
-        logger.debug("找到全局页面")
+        logger.debug("Página global encontrada")
         time.sleep(1)
         return None
 
     # 兜底规则，esc
     ctx.control_service.esc()
-    logger.debug("未找到任何页面")
+    logger.debug("Nenhuma página encontrada")
     time.sleep(1)
     return None
 
@@ -71,7 +71,7 @@ def navigateToDataMerge(ctx: NodeContext, **kwargs) -> bool:
     # 终端
     match_result = ctx.page_service.is_match(oq.results, I18nPage.Terminal.PAGE)
     if not match_result:
-        logger.warning(f"Page not found: {I18nPage.Terminal.PAGE}")
+        logger.warning(f"Página não encontrada: {I18nPage.Terminal.PAGE}")
         return False
 
     # 点击进入数据坞
@@ -80,7 +80,7 @@ def navigateToDataMerge(ctx: NodeContext, **kwargs) -> bool:
         AnchorBBox(AnchorPoint(500, 0, Align.Top | Align.Left), AnchorPoint(1280, 720, Align.Right | Align.Bottom)))
     search_result = oq.search(data_bank, data_bank_bbox)
     if not search_result:
-        logger.warning(f"Text not found: {data_bank}")
+        logger.warning(f"Texto não encontrado: {data_bank}")
         return False
     bbox = search_result[0]
     ctx.control_service.click(bbox.near)
@@ -93,7 +93,7 @@ def navigateToDataMerge(ctx: NodeContext, **kwargs) -> bool:
         timeout=5.0, interval=0.3
     )
     if not match_result:
-        logger.warning(f"Page not found: {I18nPageEchoMerge.DataBank.PAGE}")
+        logger.warning(f"Página não encontrada: {I18nPageEchoMerge.DataBank.PAGE}")
         return False
 
     # 点击数据合成侧边栏坐标
@@ -111,13 +111,13 @@ def navigateToDataMerge(ctx: NodeContext, **kwargs) -> bool:
         timeout=5.0, interval=0.3
     )
     if not match_result:
-        logger.warning(f"Page not found: {I18nPageEchoMerge.DataMerge.PAGE}")
+        logger.warning(f"Página não encontrada: {I18nPageEchoMerge.DataMerge.PAGE}")
         return False
     # 查找定向融合 TODO 进入定向融合
     targeted_merge = ctx.tr(I18nText.TargetedMerge)
     search_result = oq.search(targeted_merge)
     if not search_result or len(search_result) > 2:
-        logger.warning(f"Insufficient text count: {targeted_merge}, expected: 1 or 2")
+        logger.warning(f"Quantidade de textos insuficiente: {targeted_merge}; esperado: 1 ou 2")
         return False
     if len(search_result) == 2:
         # 点击标准融合
@@ -146,7 +146,7 @@ def navigateToDataMerge(ctx: NodeContext, **kwargs) -> bool:
             timeout=3.0, interval=0.3
         )
         if not match_result:
-            logger.warning(f"Page not found: {I18nPageEchoMerge.StandardMerge_SelectAll.PAGE}")
+            logger.warning(f"Página não encontrada: {I18nPageEchoMerge.StandardMerge_SelectAll.PAGE}")
             return False
 
         # 点击全选 合成
@@ -194,14 +194,14 @@ def navigateToDataMerge(ctx: NodeContext, **kwargs) -> bool:
             time.sleep(0.3)
 
         if is_finished:
-            logger.debug(f"声骸融合结束")
+            logger.debug("Fusão de Ecos concluída")
             ctx.control_service.esc()
             time.sleep(0.8)
             ctx.control_service.esc()
             time.sleep(1)
             return True
         elif not is_new_echo:
-            logger.warning(f"Page not found: {I18nPageEchoMerge.NewEcho.PAGE}")
+            logger.warning(f"Página não encontrada: {I18nPageEchoMerge.NewEcho.PAGE}")
             return False
 
         # 合成结果页，esc返回选择声骸页，动画时间不定，可能吞键，循环检查

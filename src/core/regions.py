@@ -43,9 +43,9 @@ class DynamicPointTransformer:
         elif isinstance(img_or_wh, np.ndarray):
             h, w = img_or_wh.shape[:2]
         else:
-            raise TypeError("h_w must be either a ndarray or a tuple")
+            raise TypeError("h_w deve ser um ndarray ou uma tupla")
         if w == 0 or h == 0:
-            raise ValueError("宽高异常，不能为0")
+            raise ValueError("Largura e altura inválidas: os valores não podem ser zero")
 
         self.h = h
         self.w = w
@@ -117,7 +117,7 @@ class DynamicPointTransformer:
 
         if new_x is None or new_y is None:
             logger.debug(f"new_x: {new_x}, new_y: {new_y}")
-            raise ValueError("未知的枚举值")
+            raise ValueError("Valor de enumeração desconhecido")
 
         new_point = (int(new_x), int(new_y))
         # logger.debug(f"point: {point}, new_point: {new_point}")
@@ -170,7 +170,7 @@ class DynamicPointTransformer:
 
         if new_x is None or new_y is None:
             logger.debug(f"new_x: {new_x}, new_y: {new_y}")
-            raise ValueError("未知的枚举值")
+            raise ValueError("Valor de enumeração desconhecido")
 
         new_point = (int(new_x), int(new_y))
         # logger.debug(f"point: {point}, new_point: {new_point}")
@@ -223,7 +223,7 @@ class Position(BaseModel):
         if position is None:
             return None
         if not isinstance(position, cls):
-            raise TypeError("不是Position类或子类")
+            raise TypeError("O valor não é da classe Position nem de uma subclasse")
         return position
 
     @classmethod

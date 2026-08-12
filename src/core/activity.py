@@ -204,7 +204,7 @@ class ActivityManager:
 
         if activity.id in self._activities:
             raise ValueError(
-                f"activity already registered: {activity.id}"
+                f"Atividade já registrada: {activity.id}"
             )
 
         self._activities[activity.id] = activity

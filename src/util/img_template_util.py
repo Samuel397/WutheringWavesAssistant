@@ -46,7 +46,7 @@ def find_icon_in_roi(
     logger.debug(f"icon.shape = {icon.shape}")
 
     if icon.shape[2] != 4:
-        raise ValueError("icon必须是BGRA")
+        raise ValueError("O ícone deve estar no formato BGRA")
 
     # -------------------------------------------------
     # Alpha作为模板
@@ -57,7 +57,7 @@ def find_icon_in_roi(
     ys, xs = np.where(alpha > 0)
 
     if len(xs) == 0:
-        raise ValueError("alpha为空")
+        raise ValueError("O canal alfa está vazio")
 
     x1 = xs.min()
     x2 = xs.max() + 1
@@ -316,7 +316,7 @@ def find_icon_in_roi_accelerated(
         early_score: float = 0.9,
 ):
     if icon.shape[2] != 4:
-        raise ValueError("icon必须是BGRA")
+        raise ValueError("O ícone deve estar no formato BGRA")
 
     # 缩放原图
     img_resized, resize_scale = _resize_img(img)
@@ -326,7 +326,7 @@ def find_icon_in_roi_accelerated(
     alpha = icon[:, :, 3]
     ys, xs = np.where(alpha > 0)
     if len(xs) == 0:
-        raise ValueError("alpha为空")
+        raise ValueError("O canal alfa está vazio")
 
     x1, x2 = xs.min(), xs.max() + 1
     y1, y2 = ys.min(), ys.max() + 1

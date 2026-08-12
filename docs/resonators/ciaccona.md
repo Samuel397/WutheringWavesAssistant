@@ -1,116 +1,116 @@
-# 夏空 (Ciaccona) - 连招逻辑分析
+# Ciaccona — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
+| Campo | Valor |
 |------|------|
-| 角色名称 | 夏空 (Ciaccona) |
-| 角色定位 | Support（辅助） |
-| 元素属性 | 气动 (Aero) |
-| 协奏类型 | 绿圈 (concerto_aero) |
-| 版本 | v2.3 |
-| 源文件 | `src/core/combat/resonator/ciaccona.py` |
+| Ressonador | Ciaccona |
+| Função | Support (Suporte) |
+| Atributo | Aero |
+| Tipo de Concerto | Círculo verde (`concerto_aero`) |
+| Versão | v2.3 |
+| Arquivo-fonte | `src/core/combat/resonator/ciaccona.py` |
 
-## 角色机制
+## Mecânicas do Ressonador
 
-夏空是枪系角色（与菲比共用枪系特殊操作），核心机制包括：
+Ciaccona usa pistolas e compartilha algumas operações especiais desse tipo de arma com Phoebe. Suas mecânicas principais são:
 
-- **音律能量** - 3格能量条，满3格时重击加一层风蚀
-- **风蚀层数** - 普攻第四段、E技能、变奏可加风蚀层
-- **大招唱歌** - R技能进入唱歌状态，持续约34.5秒
-- **唱歌状态不切人** - 通过 `_is_singing` 标记，唱歌期间不切换角色
+- **Energia musical** - possui três segmentos; com a barra cheia, um ataque pesado aplica uma carga de Aero Erosion
+- **Cargas de Aero Erosion** - o quarto ataque básico, E e a Habilidade de Intro podem aplicar cargas
+- **Estado de canto** - R inicia um estado que dura cerca de 34,5 segundos
+- **Proteção durante o canto** - a marca `_is_singing` impede a troca de Ressonador enquanto o estado estiver ativo
 
-### 音律能量
+### Energia musical
 
-| 操作 | 效果 |
+| Operação | Efeito |
 |------|------|
-| 普攻第四段 | +1格音律能量 |
-| 变奏 | +1格音律能量 |
-| 3格能量重击 | 消耗3格，加一层风蚀 |
+| Quarto ataque básico | +1 segmento de energia musical |
+| Habilidade de Intro | +1 segmento de energia musical |
+| Ataque pesado com 3 segmentos | Consome os três segmentos e aplica uma carga de Aero Erosion |
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 能量检测
+### Detecção de energia
 
-| 检测项 | 检测方式 | 说明 |
+| Item detectado | Método | Descrição |
 |--------|----------|------|
-| 音律1格 | 检测第1段能量像素为绿色 | 音律1格 |
-| 音律2格 | 检测第2段能量像素 | 音律2格 |
-| 音律3格 | 检测第3段能量像素 | 音律满（可重击） |
+| 1 segmento | Detecta o primeiro pixel de energia em verde | Um segmento de energia musical |
+| 2 segmentos | Detecta o pixel do segundo segmento | Dois segmentos de energia musical |
+| 3 segmentos | Detecta o pixel do terceiro segmento | Energia cheia; permite o ataque pesado |
 
-### 技能检测
+### Detecção de habilidades
 
-| 检测项 | 图标颜色 | 说明 |
+| Item detectado | Cor do ícone | Descrição |
 |--------|----------|------|
-| 共鸣技能 E | 白色 `(255,255,255)` | E技能就绪 |
-| 声骸技能 Q | 白色 `(255,255,255)` | 声骸就绪 |
-| 共鸣解放 R | 白色/多种绿色 | 大招就绪 |
+| Habilidade de Ressonância E | Branco `(255,255,255)` | E disponível |
+| Habilidade de Eco Q | Branco `(255,255,255)` | Eco disponível |
+| Liberação de Ressonância R | Branco/vários tons de verde | R disponível |
 
-### 动态状态
+### Estado dinâmico
 
 ```python
-_is_singing = False              # 是否在唱歌状态
-_singing_timeout_seconds = 34.5  # 唱歌超时时间
-_singing_start_time = None       # 唱歌开始时间
+_is_singing = False              # Indica se Ciaccona está no estado de canto
+_singing_timeout_seconds = 34.5  # Tempo limite do estado de canto
+_singing_start_time = None       # Momento em que o canto começou
 ```
 
-## 连招片段
+## Fragmentos de combo
 
-| 方法 | 描述 | 说明 |
+| Método | Ação | Descrição |
 |------|------|------|
-| `a4()` | 4段普攻 | 完整4段普攻 |
-| `a_intro()` | 变奏入场普攻 | 1.3秒覆盖变奏时间 |
-| `a2_end()` | 后2段普攻 | 普攻第3-4段 |
-| `z_musical_essence_3()` | 3格音律重击 | 长按1.54秒重击 |
-| `E()` | E技能 | 两次冗余按E |
-| `E3a()` | E+3段普攻 | E后从第2段普攻开始 |
-| `jEz()` | 跳+E+重击 | 空中E接3音律重击 |
-| `jEaaa()` | 跳+3段普攻 | 跳接普攻（方法名有E但实际不含e按键） |
-| `jEaaajaaa()` | 双循环跳E普攻 | 两轮跳E普攻循环 |
-| `jaaa()` | 跳+3段普攻 | 空中下落接普攻 |
-| `Q()` | 声骸技能 | 声骸释放 |
-| `R_aero_erosion()` | R风蚀 | 大招风蚀模式 |
-| `R_spectro_frazzle()` | R光噪 | 大招光噪模式 |
+| `a4()` | Quatro ataques básicos | Sequência básica completa |
+| `a_intro()` | Ataque básico ao entrar pela Intro | Dura 1,3 segundo para cobrir a animação da Intro |
+| `a2_end()` | Dois ataques básicos finais | Terceiro e quarto ataques da sequência |
+| `z_musical_essence_3()` | Ataque pesado com três segmentos | Mantém pressionado por 1,54 segundo |
+| `E()` | Habilidade de Ressonância | Pressiona E duas vezes por redundância |
+| `E3a()` | E + três ataques básicos | Depois de E, continua a partir do segundo ataque da sequência |
+| `jEz()` | Salto + E + ataque pesado | E aéreo seguido do ataque com três segmentos |
+| `jEaaa()` | Salto + três ataques básicos | Salta e ataca; apesar do nome, o método não pressiona E |
+| `jEaaajaaa()` | Dois ciclos aéreos | Executa duas rodadas de salto, E e ataques básicos |
+| `jaaa()` | Salto + três ataques básicos | Ataques básicos durante a queda |
+| `Q()` | Habilidade de Eco | Ativa o Eco |
+| `R_aero_erosion()` | R de Aero Erosion | Modo Aero Erosion da Liberação |
+| `R_spectro_frazzle()` | R de Spectro Frazzle | Modo Spectro Frazzle da Liberação |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```
-入场: 退出唱歌状态 + a_intro() 变奏普攻（1.3秒）
+Entrada em campo: encerra o estado de canto + a_intro() executa o ataque básico da Intro (1,3 segundo)
 
-截图检测能量和技能状态
-释放声骸 Q()
+Captura a tela e detecta o estado da energia e das habilidades
+Ativa o Eco com Q()
 
-1. 有R（大招就绪）:
-   ├─ 3格音律:
-   │   ├─ 有E → jEz() 空中E+重击
-   │   └─ 无E → z_musical_essence_3() 重击
-   ├─ 非3格:
-   │   ├─ 有E → jEaaa() 空中E+普攻
-   │   └─ 无E → jaaa() 空中普攻
-   └─ R_aero_erosion() 释放大招
-   └─ 标记唱歌状态
+1. Com R (Liberação pronta):
+   ├─ Três segmentos de energia musical:
+   │   ├─ Com E → jEz(), com E aéreo e ataque pesado
+   │   └─ Sem E → z_musical_essence_3(), com ataque pesado
+   ├─ Menos de três segmentos:
+   │   ├─ Com E → jEaaa(), com E aéreo e ataques básicos
+   │   └─ Sem E → jaaa(), com ataques básicos aéreos
+   └─ R_aero_erosion() ativa a Liberação
+   └─ Marca o estado de canto
    └─ return
 
-2. 无R:
-   ├─ 3格音律 → z_musical_essence_3() 重击
-   ├─ 有E:
-   │   ├─ 2格 → jEaaa()
-   │   └─ 其他 → jEaaajaaa() 双循环
-   ├─ 无E → a2_end() 普攻
-   └─ 再次检查:
-       ├─ 3格音律 → z_musical_essence_3()
-       ├─ 有R → R_aero_erosion() + 标记唱歌
-       └─ 无R → 结束
+2. Sem R:
+   ├─ Três segmentos de energia musical → z_musical_essence_3(), com ataque pesado
+   ├─ Com E:
+   │   ├─ Dois segmentos → jEaaa()
+   │   └─ Outras quantidades → jEaaajaaa(), com dois ciclos
+   ├─ Sem E → a2_end(), com ataques básicos
+   └─ Verifica novamente:
+       ├─ Três segmentos de energia musical → z_musical_essence_3()
+       ├─ Com R → R_aero_erosion() + marca o estado de canto
+       └─ Sem R → encerra a sequência
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **唱歌状态保护** - `is_singing()` 方法检查唱歌状态，唱歌期间 CombatSystem 不会切换夏空下场
-2. **入场自动退出** - 切入夏空时自动调用 `_set_singing(False)` 退出唱歌状态
-3. **音律能量优先** - 3格音律时优先释放重击叠风蚀
-4. **大招优先级最高** - 有R时优先围绕R进行连招
-5. **TODO 标记** - 代码中标记了光噪/风蚀选择待实现
+1. **Proteção do canto** - `is_singing()` verifica o estado; `CombatSystem` não troca de Ciaccona enquanto ela canta
+2. **Limpeza ao entrar** - `_set_singing(False)` encerra qualquer marca antiga quando Ciaccona entra em campo
+3. **Prioridade da energia musical** - com três segmentos, prioriza o ataque pesado e a aplicação de Aero Erosion
+4. **Prioridade de R** - quando a Liberação está disponível, escolhe sequências centradas nela
+5. **TODO explícito** - a seleção entre Spectro Frazzle e Aero Erosion ainda está pendente no código
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 06/02/2026*

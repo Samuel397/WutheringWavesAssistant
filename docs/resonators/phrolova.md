@@ -1,71 +1,72 @@
-# 弗洛洛 (Phrolova) - 连招逻辑分析
+# Phrolova — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
-|------|------|
-| 角色名称 | 弗洛洛 (Phrolova) |
-| 角色定位 | MainDPS（主输出） |
-| 元素属性 | 湮灭 (Havoc) |
-| 协奏类型 | 紫圈 (concerto_havoc) |
-| 版本 | v2.5 |
-| 源文件 | `src/core/combat/resonator/phrolova.py` |
+| Propriedade | Valor |
+|---|---|
+| Personagem | Phrolova |
+| Função | DPS principal |
+| Atributo | Aniquilante (`Havoc`) |
+| Tipo de Concerto | Círculo roxo (`concerto_havoc`) |
+| Versão | v2.5 |
+| Arquivo-fonte | `src/core/combat/resonator/phrolova.py` |
 
-## 角色机制
+## Mecânica do personagem
 
-弗洛洛拥有**乐声**系统：
+Phrolova possui um sistema de **Notas Voláteis**:
 
-- 通过普攻、E 技能产生乐声（弦乐/管乐/彩乐）
-- 检测乐声数量（最多6个检测点）
-- 共鸣解放进入特殊状态（谢幕指令）
+- Ataques Básicos e a Habilidade de Ressonância geram Notas Voláteis dos tipos Cordas, Sopros e Cadência.
+- O código detecta a quantidade de notas em até 6 posições.
+- A Liberação de Ressonância ativa um estado especial no qual Phrolova comanda Hécate.
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-`BasePhrolova` 中实现了完整的技能检测：
+`BasePhrolova` implementa a detecção completa das habilidades.
 
-### 乐声检测
+### Detecção das Notas Voláteis
 
-| 检测项 | 检测方式 | 说明 |
-|--------|----------|------|
-| 乐声1-6 | 弦乐/管乐/彩乐三种颜色 | 检测6个位置的乐声存在 |
+| Item detectado | Método | Observação |
+|---|---|---|
+| Notas 1–6 | Três conjuntos de cores: Cordas, Sopros e Cadência | Verifica a presença de uma nota em cada uma das seis posições |
 
-乐声颜色（BGR）：
-- 弦乐 (strings): `(28,14,176)`, `(26,15,134)`, `(29,19,149)`
-- 管乐 (winds): `(181,28,45)`, `(138,36,52)`
-- 彩乐 (cadenza): `(65,53,143)`, `(59,53,102)`
+Cores das notas em BGR:
 
-### 技能检测
+- Cordas (`strings`): `(28,14,176)`, `(26,15,134)`, `(29,19,149)`
+- Sopros (`winds`): `(181,28,45)`, `(138,36,52)`
+- Cadência (`cadenza`): `(65,53,143)`, `(59,53,102)`
 
-| 检测项 | 图标颜色 | 逻辑 | 说明 |
-|--------|----------|------|------|
-| 普攻·生与死的乐章 | 白色 `(255,255,255)` | AND | 普攻形态1 |
-| 普攻·亡与死的乐章 | 白色 `(255,255,255)` | AND | 普攻形态2 |
-| 共鸣技能·稍纵即逝的梦呓 | 白色 `(255,255,255)` | AND | E技能形态1 |
-| 共鸣技能·永不消逝的梦呓 | 白色 `(255,255,255)` | AND | E技能形态2 |
-| 声骸技能 | 白色 `(255,255,255)` | AND | 声骸就绪 |
-| 共鸣解放 | 白色 `(255,255,255)` | AND | 大招就绪 |
-| 共鸣解放 指令·谢幕 | R+普攻同时就绪 | AND | 谢幕指令可用 |
+### Detecção de habilidades
 
-## 当前实现状态
+| Item detectado | Cor do ícone | Lógica | Observação |
+|---|---|---|---|
+| ATQ Básico: Sinfonia da Vida e da Morte | Branco `(255,255,255)` | AND | Primeira forma do Ataque Básico |
+| ATQ Básico: Sinfonia do Destino e da Finalidade | Branco `(255,255,255)` | AND | Segunda forma do Ataque Básico |
+| Habilidade de Ressonância: Murmúrios num Sonho Fugaz | Branco `(255,255,255)` | AND | Primeira forma de E |
+| Habilidade de Ressonância: Murmúrios num Sonho Assombrado | Branco `(255,255,255)` | AND | Segunda forma de E |
+| Habilidade de Eco | Branco `(255,255,255)` | AND | O Eco está pronto |
+| Liberação de Ressonância | Branco `(255,255,255)` | AND | R está pronto |
+| Deixa: Saudação Final | R e Ataque Básico prontos simultaneamente | AND | A deixa final está disponível |
+
+## Estado atual da implementação
 
 ```python
 class Phrolova(BasePhrolova):
 ```
 
-弗洛洛继承自 `BasePhrolova`，拥有完整的技能检测能力，但当前 `combo()` 使用与 `GenericResonator` 相同的简单随机打乱逻辑，尚未利用 `BasePhrolova` 中的状态检测功能。
+Phrolova herda de `BasePhrolova` e possui todos os recursos de detecção de habilidade. Porém, o `combo()` atual usa a mesma lógica simples e aleatória de `GenericResonator`, sem aproveitar essas informações.
 
-## 连招片段
+## Trechos de combo
 
-| 方法 | 描述 | 说明 |
-|------|------|------|
-| `a4()` | 4段普攻 | 4次快速普攻 |
-| `Eaa()` | E+2段普攻 | E技能接两段普攻 |
-| `E()` | E技能 | 单独E技能 |
-| `z()` | 重击 | 长按0.50秒 |
-| `Q()` | 声骸技能 | 声骸释放 |
-| `R()` | 共鸣解放 | 大招 |
+| Método | Descrição | Observação |
+|---|---|---|
+| `a4()` | 4 ataques básicos | Quatro ataques rápidos |
+| `Eaa()` | E + 2 ataques básicos | Usa E e, em seguida, dois ataques básicos |
+| `E()` | Habilidade E | Usa somente E |
+| `z()` | Ataque Pesado | Mantém pressionado por 0.50 segundo |
+| `Q()` | Habilidade de Eco | Usa o Eco |
+| `R()` | Liberação de Ressonância | Usa R |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```python
 def combo(self):
@@ -80,11 +81,11 @@ def combo(self):
     self.combo_action(self.Q(), False)
 ```
 
-当前逻辑与 GenericResonator 相同：a4 + 随机打乱 [Eaa, R, z] + Q。
+A lógica atual é igual à de `GenericResonator`: `a4` + ordem aleatória de `[Eaa, R, z]` + `Q`.
 
-## exit_special_state()
+## `exit_special_state()`
 
-`exit_special_state()` 用于在声骸搜索前退出大招状态：
+`exit_special_state()` retira Phrolova do estado especial da Liberação de Ressonância antes da busca por Ecos:
 
 ```python
 def exit_special_state(self, scenario_enum):
@@ -93,26 +94,26 @@ def exit_special_state(self, scenario_enum):
     img = self.img_service.screenshot()
     if not self.is_cue_curtain_call_ready(img):
         return
-    # 按R退出大招状态（R落地 2.37秒）
+    # Pressiona R para sair do estado da Liberação; a aterrissagem leva 2,37 segundos
     quit_seq = [["R", 0.05, 2.37]]
     self.combo_action(quit_seq, True, ignore_event=True)
 ```
 
-## 设计分析
+## Análise do projeto
 
-### 当前状态
+### Estado atual
 
-弗洛洛已注册到 `resonator_map`，继承 `BasePhrolova`。`BasePhrolova` 中实现了完整的乐声检测和多种技能检测，但 `combo()` 尚未利用这些检测能力。
+Phrolova está registrada em `resonator_map` e herda de `BasePhrolova`. A classe-base implementa a detecção das Notas Voláteis e de várias habilidades, mas `combo()` ainda não usa esses dados.
 
-### 后续开发方向
+### Próximos passos sugeridos
 
-建议基于 `BasePhrolova` 的检测方法开发智能连招：
+Uma rotação inteligente pode ser construída com os métodos de `BasePhrolova`:
 
-1. 利用 `volatile_note_count()` 检测乐声数量
-2. 区分两种普攻和两种E技能形态
-3. 利用 `is_cue_curtain_call_ready()` 检测谢幕指令
-4. 管理共鸣解放的定音 CD（24秒）
+1. Usar `volatile_note_count()` para contar as Notas Voláteis.
+2. Distinguir as duas formas de Ataque Básico e as duas formas da Habilidade de Ressonância.
+3. Usar `is_cue_curtain_call_ready()` para detectar a Deixa: Saudação Final.
+4. Controlar o tempo de recarga de 24 segundos do Acorde Resolutivo da Liberação de Ressonância.
 
 ---
 
-*最后更新: 2026-02-07*
+*Última atualização: 2026-02-07*

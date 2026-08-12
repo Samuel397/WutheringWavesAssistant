@@ -79,11 +79,10 @@ class DailyWidget(ScrollArea):
     def __initData(self):
         from src.core.i18n import I18nText, I18nTr, Language
 
-        # try:
-        #     self.curLang = Language(paramConfig.get(paramConfig.gameLanguage))
-        # except Exception:
-        #     self.curLang = Language.ZH
-        self.curLang = Language.ZH
+        try:
+            self.curLang = Language(paramConfig.get(paramConfig.gameLanguage))
+        except (TypeError, ValueError):
+            self.curLang = Language.PT
 
         self.i18ntr = I18nTr(self.curLang)
 
@@ -296,8 +295,11 @@ class DailyWidget(ScrollArea):
         self.tacetDiscordNestComboBox = ComboBox(self.container)
         self.tacetDiscordNestComboBox.addItem(self.tr("不选择"), userData=None)
         self.tacetDiscordNestComboBox.addItem(self.tr("全选"), userData="All")
-        # for i in range(len(self.tacetDiscordNest)):
-        #     self.tacetDiscordNestComboBox.addItem(self.i18ntr(self.tacetDiscordNest[i]).raw, userData=self.tacetDiscordNest[i])
+        for tacet_nest in self.tacetDiscordNest:
+            self.tacetDiscordNestComboBox.addItem(
+                self.i18ntr(tacet_nest).raw,
+                userData=tacet_nest,
+            )
         # self.tacetDiscordNestSettingButton = ToggleToolButton(FIF.SETTING, self)
 
         self.activityCheckBox = CheckBox(self.tr("活跃行迹:"), self.container)
@@ -334,13 +336,17 @@ class DailyWidget(ScrollArea):
             self.bossChallengeComboBox,
         ]
 
-    def __refreshGridLayout(self, index):
+    def setGameLanguage(self, language):
+        """Atualiza os nomes das tarefas quando o idioma do jogo muda."""
+        self.__refreshGridLayout(language)
+
+    def __refreshGridLayout(self, language):
         from src.core.i18n import I18nText, I18nTr, Language
 
         try:
-            self.curLang = self.lang[index]
-        except Exception:
-            self.curLang = Language.ZH
+            self.curLang = language if isinstance(language, Language) else Language(language)
+        except (TypeError, ValueError):
+            self.curLang = Language.PT
 
         self.i18ntr = I18nTr(self.curLang)
 
@@ -362,8 +368,10 @@ class DailyWidget(ScrollArea):
                 i = -1
             if i == -1:
                 continue
-            text = self.tr("{challenge} - {boss}").format(
-                challenge=self.i18ntr(self.tacetSuppression[i]).raw, boss=self.i18ntr(self.tacetSuppression[i]).raw)
+            text = self.tr("{challenge} - {region}").format(
+                challenge=self.i18ntr(self.tacetSuppression[i]).raw,
+                region=self.i18ntr(self.guidebookRegionMap.get(self.tacetSuppression[i])).raw,
+            )
             self.tacetSuppressionComboBox.setItemText(idx, text)
             # _tipsList = self.tacetSuppressionTips[i]
             # _tips = ""
@@ -380,8 +388,11 @@ class DailyWidget(ScrollArea):
                 i = -1
             if i == -1:
                 continue
-            text = self.tr("{challenge} - {boss}").format(
-                challenge=self.i18ntr(self.forgeryChallenge[i]).raw, boss=self.i18ntr(self.forgeryChallenge[i]).raw)
+            text = self.tr("{challenge} - {weapon} - {region}").format(
+                challenge=self.i18ntr(self.forgeryChallenge[i]).raw,
+                weapon=self.i18ntr(self.weapon[i % len(self.weapon)]).raw,
+                region=self.i18ntr(self.guidebookRegionMap.get(self.forgeryChallenge[i])).raw,
+            )
             self.forgeryChallengeComboBox.setItemText(idx, text)
 
         for idx in range(self.bossChallengeComboBox.count()):
@@ -391,9 +402,7 @@ class DailyWidget(ScrollArea):
                 i = -1
             if i == -1:
                 continue
-            text = self.tr("{challenge} - {boss}").format(
-                challenge=self.i18ntr(self.bossChallenge[i]).raw, boss=self.i18ntr(self.bossChallenge[i]).raw)
-            self.bossChallengeComboBox.setItemText(idx, text)
+            self.bossChallengeComboBox.setItemText(idx, self.i18ntr(self.bossChallenge[i]).raw)
 
         for idx in range(self.nightmarePurificationComboBox.count()):
             try:
@@ -402,10 +411,8 @@ class DailyWidget(ScrollArea):
                 i = -1
             if i == -1:
                 continue
-            text = self.tr("{challenge} - {boss}").format(
-                challenge=self.i18ntr(self.nightmarePurification[i]).raw,
-                boss=self.i18ntr(self.nightmarePurification[i]).raw)
-            self.nightmarePurificationComboBox.setItemText(idx, text)
+            self.nightmarePurificationComboBox.setItemText(
+                idx, self.i18ntr(self.nightmarePurification[i]).raw)
 
         for idx in range(self.tacetDiscordNestComboBox.count()):
             try:
@@ -414,9 +421,8 @@ class DailyWidget(ScrollArea):
                 i = -1
             if i == -1:
                 continue
-            text = self.tr("{challenge} - {boss}").format(
-                challenge=self.i18ntr(self.tacetDiscordNest[i]).raw, boss=self.i18ntr(self.tacetDiscordNest[i]).raw)
-            self.tacetDiscordNestComboBox.setItemText(idx, text)
+            self.tacetDiscordNestComboBox.setItemText(
+                idx, self.i18ntr(self.tacetDiscordNest[i]).raw)
 
     def __initWidget(self):
         # self.resize(1000, 800)
@@ -636,7 +642,7 @@ class DailyWidget(ScrollArea):
     def __showAboutFlyout(self):
         Flyout.create(
             # icon=InfoBarIcon.INFORMATION,
-            title='关于:',
+            title=self.tr('About') + ':',
             content=self.tr(
                 '测试中，仅开放部分关卡。有问题及时群里反馈，最好录屏，或者截图游戏窗口和脚本日志，遮住uid。'
                 '\n使用前建议关闭微星小飞机、英伟达统计数据、Mod等，避免遮挡游戏ui影响识别'

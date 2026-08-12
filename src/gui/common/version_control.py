@@ -32,7 +32,7 @@ class RemoteVersion(QObject):
 
     def _tryNextUrl(self):
         if self._index >= len(self.urls):
-            logger.warning("All update URLs failed.")
+            logger.warning("Falha em todas as URLs de atualização.")
             return
         url_str = self.urls[self._index]
         url = QUrl(url_str)
@@ -104,7 +104,7 @@ class RemoteVersion(QObject):
                     return False
             return True
         except Exception as e:
-            logger.error(f"检查版本号时异常: {e}")
+            logger.error(f"Erro ao verificar a versão: {e}")
             return None
 
     def showInfoBar(self, msg, duration, parent):

@@ -1,79 +1,79 @@
-# 莫宁 (Mornye) - 连招逻辑分析
+# Mornye — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
+| Campo | Valor |
 |------|------|
-| 角色名称 | 莫宁 (Mornye) |
-| 角色定位 | Healer（治疗） |
-| 元素属性 | 熔融 (Fusion) |
-| 协奏类型 | 红圈 (concerto_fusion) |
-| 版本 | v3.0 |
-| 源文件 | `src/core/combat/resonator/mornye.py` |
+| Ressonador | Mornye |
+| Função | Healer (Cura) |
+| Atributo | Fusion |
+| Tipo de Concerto | Círculo vermelho (`concerto_fusion`) |
+| Versão | v3.0 |
+| Arquivo-fonte | `src/core/combat/resonator/mornye.py` |
 
-## 角色机制
+## Mecânicas do Ressonador
 
-莫宁拥有**双模式**战斗系统：
+Mornye possui um sistema de combate com **dois modos**:
 
-### 基准模式（常规形态）
+### Modo Base (forma normal)
 
-- **静质量能** - 能量条，满时可重击进入广域观测模式
-- 3段普攻积攒能量
-- E技能（期望误差）
-- 重击·位势转换：满能量时重击进入蝴蝶形态
+- **Rest Mass Energy** - barra que, quando cheia, permite entrar no Wide-Field Observation Mode com um ataque pesado
+- Três ataques básicos acumulam energia
+- E ativa Expected Error
+- O ataque pesado Potential Transformation ativa a forma borboleta quando a energia está cheia
 
-### 广域观测模式（蝴蝶形态）
+### Wide-Field Observation Mode (forma borboleta)
 
-- **相对动能** - 能量条，满时可释放重击·反演
-- 普攻和E技能为变身后的强化版
-- E技能·分布式阵列
-- 重击·反演：消耗相对动能
+- **Relative Momentum** - barra que, quando cheia, permite usar o ataque pesado Inversion
+- Ataques básicos e E recebem versões aprimoradas
+- E ativa Distributed Array
+- O ataque pesado Inversion consome Relative Momentum
 
-### 进阶轴核心循环
+### Rotação avançada principal
 
-1. 3段普攻攒4格能量
-2. 重击进入蝴蝶
-3. E退出蝴蝶（获得5格能量）
-4. 跳+普攻清空能量
-5. 声骸技能合轴
+1. Três ataques básicos acumulam quatro segmentos de energia.
+2. Um ataque pesado ativa a forma borboleta.
+3. E encerra a forma e concede cinco segmentos de energia.
+4. Salto + ataque básico esvazia a energia.
+5. A Habilidade de Eco sincroniza o fim da rotação.
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 能量检测
+### Detecção de energia
 
-| 检测项 | 值 | 说明 |
+| Item detectado | Valor | Descrição |
 |--------|------|------|
-| 静质量能 20% | 蓝色 `(63,119,250)` | 基准模式能量 |
-| 静质量能 50% | 蓝色 | 基准模式能量 |
-| 静质量能 80% | 蓝色 | 基准模式能量 |
-| 相对动能 20% | 暖色系 | 广域观测模式能量 |
-| 相对动能 50% | 暖色系 | 广域观测模式能量 |
-| 相对动能 80% | 暖色系 | 广域观测模式能量 |
+| Rest Mass Energy 20% | Azul `(63,119,250)` | Energia do Modo Base |
+| Rest Mass Energy 50% | Azul | Energia do Modo Base |
+| Rest Mass Energy 80% | Azul | Energia do Modo Base |
+| Relative Momentum 20% | Tons quentes | Energia do Wide-Field Observation Mode |
+| Relative Momentum 50% | Tons quentes | Energia do Wide-Field Observation Mode |
+| Relative Momentum 80% | Tons quentes | Energia do Wide-Field Observation Mode |
 
-### 状态检测
+### Detecção de estados
 
-| 检测项 | 逻辑 | 说明 |
+| Item detectado | Lógica | Descrição |
 |--------|------|------|
-| 重击·位势转换 | AND | 满能量可变身（4个检测点白色） |
-| 广域观测模式 | AND | 是否在蝴蝶形态（4个检测点白色） |
-| 共鸣技能·分布式阵列 | AND | 蝴蝶E技能 |
-| 重击·反演 | AND | 蝴蝶重击（5个检测点白色） |
-| 声骸技能 Q | OR | 声骸就绪 |
-| 共鸣解放 R | AND | 大招就绪 |
-| 共鸣解放2 | AND | 谐振场内大招 |
+| Ataque pesado — Potential Transformation | AND | Energia cheia permite transformar (quatro pontos brancos) |
+| Wide-Field Observation Mode | AND | Indica a forma borboleta (quatro pontos brancos) |
+| Habilidade de Ressonância — Distributed Array | AND | E da forma borboleta |
+| Ataque pesado — Inversion | AND | Ataque da forma borboleta (cinco pontos brancos) |
+| Habilidade de Eco Q | OR | Eco disponível |
+| Liberação de Ressonância R | AND | R disponível |
+| Segunda Liberação de Ressonância | AND | R disponível dentro do campo de ressonância |
 
-## 连招片段
+## Fragmentos de combo
 
-| 方法 | 描述 | 说明 |
+| Método | Ação | Descrição |
 |------|------|------|
-| `a4()` | 4段普攻 | 4次快速普攻 |
-| `Eaa()` | E+2段普攻 | E技能接两段普攻 |
-| `E()` | E技能 | 单独的E技能 |
-| `z()` | 重击 | 长按0.50秒 |
-| `Q()` | 声骸技能 | 声骸释放 |
-| `R()` | 共鸣解放 | 大招 |
+| `a4()` | Quatro ataques básicos | Quatro ataques rápidos |
+| `Eaa()` | E + dois ataques básicos | Habilidade de Ressonância seguida de dois ataques |
+| `E()` | Habilidade de Ressonância | Usa somente E |
+| `z()` | Ataque pesado | Mantém pressionado por 0,50 segundo |
+| `Q()` | Habilidade de Eco | Ativa o Eco |
+| `R()` | Liberação de Ressonância | Ativa R |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```python
 def combo(self):
@@ -88,15 +88,15 @@ def combo(self):
     self.combo_action(self.Q(), False)
 ```
 
-1. 先打 a4() 四段普攻
-2. 随机打乱 [Eaa, R, z] 的顺序并依次执行
-3. 最后释放声骸 Q()
+1. Executa `a4()`, com quatro ataques básicos.
+2. Embaralha `[Eaa, R, z]` e executa os três itens nessa ordem aleatória.
+3. Por fim, ativa o Eco com `Q()`.
 
-> **注意**：虽然 `BaseMornye` 中实现了完整的状态检测方法（静质量能、相对动能、广域观测模式等），但当前 `combo()` 并未使用这些检测功能，而是采用与 `GenericResonator` 相同的简单随机打乱逻辑。定制连招逻辑尚待开发。
+> **Nota:** embora `BaseMornye` implemente a detecção completa de Rest Mass Energy, Relative Momentum e Wide-Field Observation Mode, o `combo()` atual ainda não utiliza esses dados. Ele emprega a mesma lógica aleatória simples de `GenericResonator`; o combo personalizado permanece pendente.
 
-## exit_special_state()
+## `exit_special_state()`
 
-`exit_special_state()` 方法用于在声骸搜索前退出广域观测模式（蝴蝶形态）：
+`exit_special_state()` encerra o Wide-Field Observation Mode antes da busca de Ecos:
 
 ```python
 def exit_special_state(self, scenario_enum):
@@ -105,18 +105,18 @@ def exit_special_state(self, scenario_enum):
     img = self.img_service.screenshot()
     if not self.is_wide_field_observation_mode_ready(img):
         return
-    # 跳跃退出蝴蝶形态
+    # Salta para sair da forma de borboleta
     quit_seq = [["j", 0.05, 2.00]]
     self.combo_action(quit_seq, True, ignore_event=True)
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **丰富的状态检测** - `BaseMornye` 实现了完整的双模式能量检测，为后续定制连招做准备
-2. **简单的连招执行** - 当前 `combo()` 使用简单随机打乱，与 GenericResonator 逻辑相同
-3. **蝴蝶退出保护** - `exit_special_state()` 在声骸搜索前检测并退出广域观测模式
-4. **已注册** - 莫宁已注册到 `resonator_map`，使用自己的 `combo()` 方法
+1. **Detecção abrangente** - `BaseMornye` implementa a energia dos dois modos e prepara a futura lógica personalizada
+2. **Execução simples** - o `combo()` atual usa a mesma ordem aleatória de `GenericResonator`
+3. **Saída segura da forma borboleta** - `exit_special_state()` detecta e encerra o modo antes da busca de Ecos
+4. **Registro próprio** - Mornye está em `resonator_map` e usa seu próprio método `combo()`
 
 ---
 
-*最后更新: 2026-02-07*
+*Última atualização: 07/02/2026*

@@ -32,9 +32,14 @@ def timeit(_func=None, *, ignore: int = 0):
                 stats["total_time"] += elapsed_time
                 avg_time = stats["total_time"] / (stats["count"] - ignore)
                 logger.debug(
-                    f"{func.__name__} 耗时: {elapsed_time:.6f} 秒, 第 {stats['count']} 次调用平均耗时: {avg_time:.6f} 秒")
+                    f"{func.__name__} levou {elapsed_time:.6f} segundos; "
+                    f"tempo médio após {stats['count']} chamadas: {avg_time:.6f} segundos"
+                )
             else:
-                logger.debug(f"{func.__name__} 耗时: {elapsed_time:.6f} 秒 (第{stats['count']}次不计入平均值)")
+                logger.debug(
+                    f"{func.__name__} levou {elapsed_time:.6f} segundos "
+                    f"(a chamada {stats['count']} não entra na média)"
+                )
             return result
 
         return wrapper

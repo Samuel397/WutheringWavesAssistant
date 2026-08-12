@@ -25,7 +25,7 @@ class ProcessController(ABC):
 
     def cache_process(self, process_name: str, process: Process) -> bool:
         if self.exist(process_name):
-            logger.warning("任务进程已存在: %s", process_name)
+            logger.warning("O processo da tarefa já existe: %s", process_name)
             return False
         self.PROCESS_DICT[process_name] = process
         return True

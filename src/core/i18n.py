@@ -3,6 +3,7 @@ import re
 from enum import Enum
 
 from src.core.geometry import AnchorBBox, AnchorPoint, Align, BBox
+from src.core.pt_i18n import PT_I18N_UNRESOLVED, PT_OFFICIAL_TEXT, pt_fuzzy_regex, pt_regex
 
 logger = logging.getLogger(__name__)
 
@@ -2169,6 +2170,25 @@ I18N_TEXT = {
 }
 
 
+def _install_portuguese_text_mappings() -> None:
+    """Install the compact PT-BR TextMap inventory into the runtime table."""
+    for key, official_values in PT_OFFICIAL_TEXT.items():
+        lang_map = I18N_TEXT.get(key)
+        if lang_map is None:
+            raise KeyError(f"A chave do TextMap em português não possui definição em tempo de execução: {key}")
+        if key == I18nText.WutheringWaves:
+            # The window title is compared literally, not as an OCR expression.
+            lang_map[Language.PT] = official_values[0]
+            continue
+        lang_map[Language.PT] = RegexStr(
+            pt_regex(key),
+            raw=official_values[0],
+            desc="Official Portuguese Wuthering Waves TextMap",
+        )
+
+_install_portuguese_text_mappings()
+
+
 class I18nPage:
     """语义key"""
     Name = "name"
@@ -3541,6 +3561,350 @@ I18N_PAGES_BOSS = {
 }
 
 
+def _pt_page(name: str, include: dict, exclude: dict | None = None, assets: list[str] | None = None) -> dict:
+    return {
+        I18nPage.Name: name,
+        I18nPage.Include: include,
+        I18nPage.Exclude: exclude or {},
+        I18nPage.Assets: assets or [],
+    }
+
+
+def _install_portuguese_pages() -> None:
+    """Register PT-BR page and view recognizers derived from official UI text."""
+    confirm = pt_regex(I18nText.Confirm)
+    cancel = pt_regex(I18nText.WeeklyCancel)
+    restart = pt_regex(I18nText.Restart)
+    exit_ = pt_regex(I18nText.Exit)
+    challenge_complete = pt_regex(I18nText.ViewChallengeComplete)
+    challenge_failed = pt_regex(I18nText.ViewChallengeFailed)
+
+    global_pages = {
+        I18nPage.Terminal.PAGE: _pt_page(
+            "UI-Terminal",
+            {
+                I18nPage.Terminal.Events: pt_regex(I18nText.Events),
+                I18nPage.Terminal.SOL3Phase: pt_regex(I18nText.SOL3Phase),
+                I18nPage.Terminal.UnionLevel: pt_regex(I18nText.UnionLevel),
+                I18nPage.Terminal.UnionEXP: pt_regex(I18nText.UnionEXP),
+            },
+        ),
+        I18nPage.Reward_LuniteSubscriptionReward.PAGE: _pt_page(
+            "Recompensa da Assinatura de Lunita",
+            {I18nPage.Reward_LuniteSubscriptionReward.Reward: pt_regex(I18nText.LuniteSubscriptionReward)},
+        ),
+        I18nPage.Reward_ReceiveRewards.PAGE: _pt_page(
+            "Resgatar recompensas",
+            {
+                I18nPage.Reward_ReceiveRewards.ClaimRewards: pt_regex(I18nText.ViewClaimRewards),
+                I18nPage.Reward_ReceiveRewards.Confirm: confirm,
+                I18nPage.Reward_ReceiveRewards.Cancel: cancel,
+            },
+        ),
+        I18nPage.Boss_Crownless_ResonanceCord.PAGE: _pt_page(
+            "Destronado-CordaDeRessonância",
+            {I18nPage.Boss_Crownless_ResonanceCord.ResonanceCord: pt_regex(I18nText.CrownlessResonanceCord)},
+        ),
+        I18nPage.Boss_Dreamless_Enter.PAGE: _pt_page(
+            "Estátua do Destronado-Coração",
+            {
+                I18nPage.Boss_Dreamless_Enter.Dreamless: pt_fuzzy_regex(flex_ws(r"Estátua do Destronado")),
+                I18nPage.Boss_Dreamless_Enter.Heart: pt_fuzzy_regex(r"Coração"),
+                I18nPage.Boss_Dreamless_Enter.Enter: r"^Entr(?:e|ar)",
+            },
+            {
+                I18nPage.Boss_Dreamless_Enter.Confirm: confirm,
+                I18nPage.Boss_Dreamless_Enter.FastTravel: pt_regex(I18nText.FastTravel),
+            },
+        ),
+        I18nPage.Boss_Jue_Enter.PAGE: _pt_page(
+            "Jué-CicloTemporal",
+            {
+                I18nPage.Boss_Jue_Enter.Enter: flex_ws(r"^Entre no Ciclo Temporal$"),
+                I18nPage.Boss_Jue_Enter.Confirm: confirm,
+            },
+        ),
+        I18nPage.Boss_Hecate_Enter.PAGE: _pt_page(
+            "EsferaSonora-Pesadelo-Final",
+            {I18nPage.Boss_Hecate_Enter.Enter: r'^Entr(?:e|ar) (?:na Esfera Sonora|no reino do Pesadelo|em "O Final")$'},
+            {I18nPage.Boss_Hecate_Enter.Confirm: confirm},
+        ),
+        I18nPage.Boss_RecommendedLevel.PAGE: _pt_page(
+            "NívelRecomendado",
+            {
+                I18nPage.Boss_RecommendedLevel.RecommendedLevel: pt_fuzzy_regex(r"(?:Nível|Nv\.).*?(?:sugerido|recomendado).*?\d+"),
+                I18nPage.Boss_RecommendedLevel.SoloChallenge: pt_regex(I18nText.SoloChallenge),
+                I18nPage.Boss_RecommendedLevel.ClaimsRemaining: r"^Tentativas (?:Restantes|de [Dd]esafio)",
+            },
+        ),
+        I18nPage.Boss_StartChallenge.PAGE: _pt_page(
+            "IniciarDesafio",
+            {
+                I18nPage.Boss_StartChallenge.QuickSetup: pt_regex(I18nText.QuickSetup),
+                I18nPage.Boss_StartChallenge.StartChallenge: pt_regex(I18nText.StartChallenge),
+            },
+        ),
+        I18nPage.Fight_Fight.PAGE: _pt_page(
+            "Combate",
+            {I18nPage.Fight_Fight.Fight: pt_fuzzy_regex(r"(?:Derrote|Enfrente|Sistema\s*?Tétis)")},
+            {
+                I18nPage.Fight_Fight.Activity: pt_regex(I18nText.Activity),
+                I18nPage.Fight_Fight.ChallengeCompleted: challenge_complete,
+            },
+        ),
+        I18nPage.Fight_Absorption.PAGE: _pt_page(
+            "Absorver",
+            {I18nPage.Fight_Absorption.Absorb: pt_regex(I18nText.Absorb)},
+            {I18nPage.Fight_Absorption.ClaimRewards: pt_regex(I18nText.ClaimRewards)},
+        ),
+        I18nPage.Fight_ChallengeCompleted.PAGE: _pt_page(
+            "DesafioConcluído",
+            {I18nPage.Fight_ChallengeCompleted.ChallengeCompleted: challenge_complete},
+        ),
+        I18nPage.Fight_ClickAlternatelyToBreakFree.PAGE: _pt_page(
+            "Libertar-se",
+            {I18nPage.Fight_ClickAlternatelyToBreakFree.ClickAlternatelyToBreakFree: pt_regex(I18nText.ViewBreakFree)},
+        ),
+        I18nPage.Fight_BreachTimeRemaining.PAGE: _pt_page(
+            "TempoRestanteDaBrecha",
+            {I18nPage.Fight_BreachTimeRemaining.BreachTimeRemaining: r"^(?:TEMPO RESTANTE DA BRECHA|Tempo restante)"},
+        ),
+        I18nPage.UI_ESC_LeaveInstance.PAGE: _pt_page(
+            "UI-SairDaInstância",
+            {
+                I18nPage.UI_ESC_LeaveInstance.Note: pt_regex(I18nText.ViewLeaveInstanceNote),
+                I18nPage.UI_ESC_LeaveInstance.Confirm: confirm,
+                I18nPage.UI_ESC_LeaveInstance.Restart: restart,
+            },
+        ),
+        I18nPage.Notice_LeaveInstance.PAGE: _pt_page(
+            "Aviso-SairDaInstância",
+            {
+                I18nPage.Notice_LeaveInstance.Notice: pt_regex(I18nText.ViewLeaveInstance2Notice),
+                I18nPage.Notice_LeaveInstance.Confirm: confirm,
+                I18nPage.Notice_LeaveInstance.Cancel: rf"(?:{cancel}|{restart})",
+                I18nPage.Notice_LeaveInstance.Leave: pt_regex(I18nText.ViewLeaveInstance2Leave),
+            },
+        ),
+        I18nPage.Notice_ForgeryChallengeComplete.PAGE: _pt_page(
+            "DesafioDeForja-Concluído/Falhou",
+            {
+                I18nPage.Notice_ForgeryChallengeComplete.ChallengeComplete: rf"(?:{challenge_complete}|{challenge_failed})",
+                I18nPage.Notice_ForgeryChallengeComplete.Exit: exit_,
+                I18nPage.Notice_ForgeryChallengeComplete.Restart: restart,
+            },
+        ),
+        I18nPage.Notice_TacetSuppression.PAGE: _pt_page(
+            "SupressãoDissonante-Concluída",
+            {
+                I18nPage.Notice_TacetSuppression.ChallengeComplete: pt_regex(I18nText.ViewTacetSuppressionChallengeComplete),
+                I18nPage.Notice_TacetSuppression.Confirm: pt_regex(I18nText.ViewTacetSuppressionConfirm),
+            },
+            {
+                I18nPage.Notice_TacetSuppression.Exit: pt_regex(I18nText.ViewTacetSuppressionExit),
+                I18nPage.Notice_TacetSuppression.Cancel: pt_regex(I18nText.ViewTacetSuppressionCancel),
+                I18nPage.Notice_TacetSuppression.Restart: pt_regex(I18nText.ViewTacetSuppressionRestart),
+            },
+        ),
+        I18nPage.Notice_LoseConsciousness.PAGE: _pt_page(
+            "RessonanteDerrotado",
+            {
+                I18nPage.Notice_LoseConsciousness.LoseConsciousness: r"^(?:Derrotado|Derrota)$",
+                I18nPage.Notice_LoseConsciousness.Revive: r"^(?:Reviver|Renascer)(?: agora)?$",
+            },
+        ),
+        I18nPage.Notice_SelectRevivalItem.PAGE: _pt_page(
+            "SelecionarItemDeReavivamento",
+            {I18nPage.Notice_SelectRevivalItem.SelectRevivalItem: flex_ws(r"^Selecione um item de reavivamento$")},
+        ),
+        I18nPage.Notice_Replenish_Waveplate.PAGE: _pt_page(
+            "ReabastecerPlacasOnduladas",
+            {I18nPage.Notice_Replenish_Waveplate.ReplenishWaveplate: pt_fuzzy_regex(r"(?:Reabasteça|Resgatar) (?:suas )?Placas? Onduladas?")},
+        ),
+        I18nPage.Notice_BlankArea.PAGE: _pt_page(
+            "ToqueNaÁreaEmBranco",
+            {I18nPage.Notice_BlankArea.BlankArea: pt_regex(I18nText.TapTheBlankAreaToClose)},
+        ),
+        I18nPage.Login_ClickLink.PAGE: _pt_page(
+            "ToqueParaPousarEmSolaris-3",
+            {I18nPage.Login_ClickLink.ClickLink: flex_ws(r"^Toque para pousar em Solaris-3$")},
+        ),
+        I18nPage.Login_AccountLogin.PAGE: _pt_page(
+            "LoginDaConta",
+            {
+                I18nPage.Login_AccountLogin.Text: r"^(?:Sair|Aviso|Reparar|Consertar)$",
+                I18nPage.Login_AccountLogin.Login: r"^Entrar$",
+            },
+            {I18nPage.Login_AccountLogin.ClickLink: flex_ws(r"^Toque para pousar em Solaris-3$")},
+        ),
+        I18nPage.Login_Disconnected.PAGE: _pt_page(
+            "Desconectado",
+            {
+                I18nPage.Login_Disconnected.Disconnected: flex_ws(r"^Desconectando da internet$"),
+                I18nPage.Login_Disconnected.Confirm: confirm,
+            },
+        ),
+        I18nPage.SystemNotice_UpdateCompleteExit.PAGE: _pt_page(
+            "AtualizaçãoConcluída-Reiniciar",
+            {
+                I18nPage.SystemNotice_UpdateCompleteExit.UpdateComplete: pt_fuzzy_regex(r"^Atualização concluída.*reinicie o jogo"),
+                I18nPage.SystemNotice_UpdateCompleteExit.Exit: exit_,
+            },
+        ),
+        I18nPage.SystemNotice_UpdateCompleteConfirm.PAGE: _pt_page(
+            "CorreçãoConcluída-Reiniciando",
+            {
+                I18nPage.SystemNotice_UpdateCompleteConfirm.UpdateComplete: pt_fuzzy_regex(r"^Correção concluída.*reiniciando"),
+                I18nPage.SystemNotice_UpdateCompleteConfirm.Confirm: confirm,
+            },
+        ),
+        I18nPage.SystemNotice_Confirm_DriverVersion.PAGE: _pt_page(
+            "DriverGráficoDesatualizado",
+            {
+                I18nPage.SystemNotice_Confirm_DriverVersion.DriverVersion: pt_fuzzy_regex(r"driver gráfico.*desatualizad"),
+                I18nPage.SystemNotice_Confirm_DriverVersion.Confirm: confirm,
+            },
+        ),
+        I18nPage.SystemNotice_NetworkTimeout.PAGE: _pt_page(
+            "Sistema-TempoEsgotado",
+            {
+                I18nPage.SystemNotice_NetworkTimeout.SystemNotice: pt_fuzzy_regex(r"^(?:Notificação do Sistema|Sistema|Aviso do sistema)$"),
+                I18nPage.SystemNotice_NetworkTimeout.NetworkTimeout: pt_fuzzy_regex(r"^Tempo de solicitação esgotado"),
+                I18nPage.SystemNotice_NetworkTimeout.Confirm: confirm,
+            },
+        ),
+        I18nPage.PhantasmaDreamlandRhapsody_CurrentPhase.PAGE: _pt_page(
+            "TerraDosSonhos-FaseAtual",
+            {
+                I18nPage.PhantasmaDreamlandRhapsody_CurrentPhase.CurrentPhase: r"^Fase atual \d+/\d+",
+                I18nPage.PhantasmaDreamlandRhapsody_CurrentPhase.Confirm: confirm,
+            },
+        ),
+        I18nPage.PhantasmaDreamlandRhapsody_Pause.PAGE: _pt_page(
+            "TerraDosSonhos-Pausa",
+            {
+                I18nPage.PhantasmaDreamlandRhapsody_Pause.Finalize: pt_regex(I18nText.PdrFinalize),
+                I18nPage.PhantasmaDreamlandRhapsody_Pause.Restart: pt_regex(I18nText.PdrRestart),
+                I18nPage.PhantasmaDreamlandRhapsody_Pause.Resume: pt_regex(I18nText.PdrResume),
+            },
+        ),
+        I18nPage.PhantasmaDreamlandRhapsody_Leave.PAGE: _pt_page(
+            "TerraDosSonhos-Sair",
+            {
+                I18nPage.PhantasmaDreamlandRhapsody_Leave.LeaveNow: pt_fuzzy_regex(r"^(?:Finalizar agora falhará|Confirmar progresso e sair agora)"),
+                I18nPage.PhantasmaDreamlandRhapsody_Leave.Confirm: confirm,
+            },
+        ),
+        I18nPage.PhantasmaDreamlandRhapsody_PhaseResult.PAGE: _pt_page(
+            "TerraDosSonhos-ResultadoDaFase",
+            {
+                I18nPage.PhantasmaDreamlandRhapsody_PhaseResult.PhaseResult: r"^Resultado da Fase \d+",
+                I18nPage.PhantasmaDreamlandRhapsody_PhaseResult.Confirm: rf"(?:{confirm}|^Fase seguinte$)",
+            },
+        ),
+        I18nPage.PhantasmaDreamlandRhapsody_ChallengeFinished.PAGE: _pt_page(
+            "TerraDosSonhos-DesafioFinalizado",
+            {
+                I18nPage.PhantasmaDreamlandRhapsody_ChallengeFinished.ChallengeFinished: rf"(?:{challenge_complete}|{challenge_failed})",
+                I18nPage.PhantasmaDreamlandRhapsody_ChallengeFinished.Return: pt_regex(I18nText.PdrReturn),
+            },
+        ),
+        I18nPage.PhantasmaDreamlandRhapsody_Pick1Of3.PAGE: _pt_page(
+            "TerraDosSonhos-EscolherEco",
+            {
+                I18nPage.PhantasmaDreamlandRhapsody_Pick1Of3.Refresh: pt_regex(I18nText.PdrRefresh),
+                I18nPage.PhantasmaDreamlandRhapsody_Pick1Of3.Skip: pt_regex(I18nText.PdrSkip),
+                I18nPage.PhantasmaDreamlandRhapsody_Pick1Of3.Confirm: confirm,
+            },
+        ),
+        I18nPage.PhantasmaDreamlandRhapsody_StrangeEncounters.PAGE: _pt_page(
+            "TerraDosSonhos-EncontrosEstranhos",
+            {
+                I18nPage.PhantasmaDreamlandRhapsody_StrangeEncounters.ImNotInterestedInThis: pt_regex(I18nText.PdrImNotInterestedInThis),
+                I18nPage.PhantasmaDreamlandRhapsody_StrangeEncounters.Confirm: confirm,
+            },
+        ),
+    }
+    for page_key, page in global_pages.items():
+        I18N_PAGES[page_key][Language.PT] = page
+
+    I18N_PAGES_ECHO_MERGE[I18nPage.Terminal.PAGE][Language.PT] = _pt_page(
+        "UI-Terminal",
+        {
+            I18nPage.Terminal.Terminal: {
+                I18nPage.Text: pt_regex(I18nText.Terminal),
+                I18nPage.Limit: AnchorBBox(
+                    AnchorPoint(0, 0, Align.Top | Align.Left),
+                    AnchorPoint(280, 90, Align.Top | Align.Left),
+                ).as_tuple(),
+            },
+            I18nPage.Terminal.Team: pt_regex(I18nText.Team),
+            I18nPage.Terminal.Events: pt_regex(I18nText.Events),
+            I18nPage.Terminal.DataBank: pt_regex(I18nText.DataBank),
+        },
+    )
+    I18N_PAGES_ECHO_MERGE[I18nPageEchoMerge.DataBank.PAGE][Language.PT] = _pt_page(
+        "BancoDeDados",
+        {
+                I18nPageEchoMerge.DataBank.DataBankInfo: pt_fuzzy_regex(flex_ws(r"^Informações do banco de dados$")),
+            I18nPageEchoMerge.DataBank.Rewards: r"^Recompensas$",
+        },
+    )
+    I18N_PAGES_ECHO_MERGE[I18nPageEchoMerge.DataMerge.PAGE][Language.PT] = _pt_page(
+        "BancoDeDados-FusãoDeDados",
+        {
+            I18nPageEchoMerge.DataMerge.TargetedMerge: pt_regex(I18nText.TargetedMerge),
+            I18nPageEchoMerge.DataMerge.StandardMerge: pt_regex(I18nText.StandardMerge),
+        },
+    )
+    I18N_PAGES_ECHO_MERGE[I18nPageEchoMerge.StandardMerge_SelectAll.PAGE][Language.PT] = _pt_page(
+        "FusãoPadrão-SelecionarTudo",
+        {
+            I18nPageEchoMerge.StandardMerge_SelectAll.SelectAll: r"^Selecionar [Tt]udo$",
+            I18nPageEchoMerge.StandardMerge_SelectAll.StandardMerge: pt_regex(I18nText.StandardMerge),
+        },
+    )
+    I18N_PAGES_ECHO_MERGE[I18nPageEchoMerge.Notice_IncludesHighRarity.PAGE][Language.PT] = _pt_page(
+        "Aviso-AltaRaridade",
+        {
+            I18nPageEchoMerge.Notice_IncludesHighRarity.Notice: r"^Aviso$",
+            I18nPageEchoMerge.Notice_IncludesHighRarity.HighRarity: flex_ws(r"Alta raridade"),
+                I18nPageEchoMerge.Notice_IncludesHighRarity.DoNotShowAgain: pt_fuzzy_regex(r"^Não mostrar (?:mais nesta partida|novamente)$"),
+            I18nPageEchoMerge.Notice_IncludesHighRarity.Confirm: confirm,
+        },
+    )
+    I18N_PAGES_ECHO_MERGE[I18nPageEchoMerge.NewEcho.PAGE][Language.PT] = _pt_page(
+        "NovoEco",
+        {I18nPageEchoMerge.NewEcho.NewEcho: r"^Novo [Ee]co(?: [Dd]esbloqueado)?$"},
+    )
+
+    I18N_PAGES_GUIDEBOOK[I18nPageGuidebook.MaterialsSpots.PAGE][Language.PT] = _pt_page(
+        "LocaisDeMateriais",
+        {
+            I18nPageGuidebook.MaterialsSpots.ForgeryChallenge: pt_regex(I18nText.ForgeryChallenge),
+            I18nPageGuidebook.MaterialsSpots.SimulationChallenge: pt_regex(I18nText.SimulationChallenge),
+            I18nPageGuidebook.MaterialsSpots.BossChallenge: pt_regex(I18nText.BossChallenge),
+            I18nPageGuidebook.MaterialsSpots.TacetSuppression: pt_regex(I18nText.TacetSuppression),
+            I18nPageGuidebook.MaterialsSpots.WeeklyChallenge: pt_regex(I18nText.WeeklyChallenge),
+            I18nPageGuidebook.MaterialsSpots.NightmarePurification: pt_regex(I18nText.NightmarePurification),
+            I18nPageGuidebook.MaterialsSpots.TacetDiscordNest: pt_regex(I18nText.TacetDiscordNest),
+        },
+    )
+
+    # Boss views are language-neutral compositions of I18nText features.  The
+    # PT-specific text patterns above are resolved when the view is evaluated.
+    for view_key, language_views in I18N_PAGES_BOSS.items():
+        source_view = language_views.get(Language.EN) or language_views[Language.ZH]
+        language_views[Language.PT] = View(
+            name=f"PT-{source_view.name}",
+            child=list(source_view.child),
+            assets=source_view.assets,
+        )
+
+
+_install_portuguese_pages()
+
+
 class I18nTr:
 
     def __init__(self, lang: Language):
@@ -3559,4 +3923,12 @@ class I18nTr:
         lang_map = I18N_TEXT.get(text_key)
         if not lang_map:
             return None
-        return lang_map.get(lang if lang is not None else self._lang)
+        selected_lang = lang if lang is not None else self._lang
+        result = lang_map.get(selected_lang)
+        if result is not None:
+            return result
+        # Keep official gaps auditable in PT_I18N_UNRESOLVED while ensuring a
+        # newly released name never reaches an OCR regex compiler as None.
+        if selected_lang == Language.PT or selected_lang == Language.PT.value:
+            return lang_map.get(Language.EN) or lang_map.get(Language.ZH)
+        return None

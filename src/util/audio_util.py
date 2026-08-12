@@ -24,7 +24,7 @@ def mute_program(exe_name: str, mute: bool = True) -> bool:
         logger.debug("Process: %s, mute: %s", process.name(), "Muted 🔇" if volume.GetMute() else "Unmuted 🔊")
         if process.name().lower() == exe_name.lower():
             volume.SetMute(mute, None)
-            logger.info("[+] %s: %s", exe_name, "Muted 🔇" if mute else "Unmuted 🔊")
+            logger.info("[+] %s: %s", exe_name, "Silenciado 🔇" if mute else "Com som 🔊")
             return True
     return False
 

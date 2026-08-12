@@ -32,43 +32,43 @@ class TaskStatus(Enum):
     # 格式: (显示名, 描述, 优先级, 颜色, 图标, 可转换来源, 是否终态, 是否活跃)
 
     NOT_REQUIRED = (
-        "不需要做", "任务无需执行，已跳过",
+        "Dispensada", "A tarefa não precisa ser executada e foi ignorada",
         0, "gray", "⏭️", {"PENDING", "NOT_REQUIRED"},
         True, False
     )
 
     PENDING = (
-        "待处理", "任务已创建，等待执行",
+        "Pendente", "A tarefa foi criada e aguarda execução",
         1, "orange", "⏳", {"NOT_REQUIRED", "PENDING"},
         False, True
     )
 
     IN_PROGRESS = (
-        "进行中", "任务正在执行",
+        "Em andamento", "A tarefa está em execução",
         2, "blue", "🔄", {"PENDING"},
         False, True
     )
 
     WAITING = (
-        "等待中", "任务等待外部条件",
+        "Aguardando", "A tarefa aguarda uma condição externa",
         3, "purple", "⏸️", {"IN_PROGRESS"},
         False, True
     )
 
     FAILED = (
-        "失败", "任务执行失败",
+        "Falhou", "Falha na execução da tarefa",
         4, "red", "❌", {"IN_PROGRESS", "WAITING"},
         True, False
     )
 
     COMPLETED = (
-        "已完成", "任务成功完成",
+        "Concluída", "Tarefa concluída com sucesso",
         5, "green", "✅", {"IN_PROGRESS", "WAITING"},
         True, False
     )
 
     CANCELLED = (
-        "已取消", "任务被取消",
+        "Cancelada", "A tarefa foi cancelada",
         6, "gray", "🚫", {"PENDING", "IN_PROGRESS", "WAITING"},
         True, False
     )
@@ -157,9 +157,9 @@ class TaskStatus(Enum):
             allowed = ", ".join(target._meta.can_transition_from)
             task_info = f" [task={task_id}]" if task_id else ""
             raise ValueError(
-                f"Invalid state transition{task_info}: "
+                f"Transição de estado inválida{task_info}: "
                 f"'{self.name}' -> '{target.name}'. "
-                f"'{target.name}' only allows transitions from: {allowed}"
+                f"'{target.name}' só aceita transições a partir de: {allowed}"
             )
         return target
 
@@ -268,7 +268,7 @@ class TaskFSM(FSM):
 
             logger.info(f"{task_id}{self.name}: {self.status}")
         except ValueError as e:
-            logger.error(f"{task_id}{self.name}: 转换失败")
+            logger.error(f"{task_id}{self.name}: falha na transição")
             raise e
 
     def start(self):
@@ -291,7 +291,7 @@ class TaskFSM(FSM):
         if self.status.can_retry:
             self.transition(TaskStatus.PENDING)
         else:
-            logger.info(f"无法重试: 当前状态 {self.status.name}")
+            logger.info(f"Não é possível tentar novamente; estado atual: {self.status.name}")
 
     def __str__(self) -> str:
         return f"TaskFSM(name='{self.name}', status={self.status})"
@@ -356,7 +356,7 @@ class TaskFSMGroup(FSM):
         for child in self.children:
             if not child.is_terminal:
                 logger.debug(f"❌ {self.name}.is_terminal=False")
-                logger.debug(f"   └─ 因为 {child.name}.is_terminal=False")
+                logger.debug(f"   └─ porque {child.name}.is_terminal=False")
                 return False
         return True
 
@@ -370,7 +370,7 @@ class TaskFSMGroup(FSM):
                 return True
 
         logger.debug(f"❌ {self.name}.is_active=False")
-        logger.debug(f"   └─ 子节点都不活跃: {[c.name for c in self.children]}")
+        logger.debug(f"   └─ nenhum nó filho está ativo: {[c.name for c in self.children]}")
         return False
 
     @property
@@ -381,7 +381,7 @@ class TaskFSMGroup(FSM):
         for child in self.children:
             if not child.is_finished:
                 logger.debug(f"❌ {self.name}.is_finished=False")
-                logger.debug(f"   └─ 因为 {child.name}.is_finished=False")
+                logger.debug(f"   └─ porque {child.name}.is_finished=False")
                 return False
         return True
 
@@ -393,7 +393,7 @@ class TaskFSMGroup(FSM):
         for child in self.children:
             if child.is_failed:
                 logger.debug(f"✅ {self.name}.is_failed=True")
-                logger.debug(f"   └─ 因为 {child.name}.is_failed=True")
+                logger.debug(f"   └─ porque {child.name}.is_failed=True")
                 return True
         return False
 
@@ -404,22 +404,22 @@ def demo():
 
     # 1. 基础属性访问
     status = TaskStatus.IN_PROGRESS
-    logger.info(f"状态: {status}")
-    logger.info(f"描述: {status.description}")
-    logger.info(f"优先级: {status.priority}")
-    logger.info(f"颜色: {status.color}")
-    logger.info(f"是否活跃: {status.is_active}")
-    logger.info(f"是否终态: {status.is_terminal}")
+    logger.info(f"Estado: {status}")
+    logger.info(f"Descrição: {status.description}")
+    logger.info(f"Prioridade: {status.priority}")
+    logger.info(f"Cor: {status.color}")
+    logger.info(f"Está ativo: {status.is_active}")
+    logger.info(f"É um estado final: {status.is_terminal}")
     logger.info("\n")
 
     # 2. 状态转换验证
     current = TaskStatus.PENDING
-    logger.info(f"当前状态: {current}")
+    logger.info(f"Estado atual: {current}")
 
     # 合法转换
     try:
         next_status = current.transition_to(TaskStatus.IN_PROGRESS)
-        logger.info(f"✅ 转换成功: {current.name} -> {next_status.name}")
+        logger.info(f"✅ Transição concluída: {current.name} -> {next_status.name}")
     except ValueError as e:
         logger.error(f"❌ {e}")
 
@@ -427,7 +427,7 @@ def demo():
     try:
         current.transition_to(TaskStatus.COMPLETED)  # PENDING 不能直接到 COMPLETED
     except ValueError as e:
-        logger.error(f"❌ 非法转换: {e}")
+        logger.error(f"❌ Transição inválida: {e}")
     logger.info("\n")
 
     # 3. 任务状态机（完整示例）
@@ -448,16 +448,16 @@ def demo():
     logger.info("\n")
 
     # 4. 获取状态图的某个部分
-    logger.info("=== 状态转换图（部分） ===")
+    logger.info("=== Grafo de transição de estados (parcial) ===")
     graph = TaskStatus.get_transition_graph()
     for target, sources in list(graph.items())[:3]:  # 只展示前3个
-        logger.info(f"'{target}' 可以从: {sources}")
+        logger.info(f"'{target}' aceita transições a partir de: {sources}")
     logger.info("\n")
 
     # 5. 统计和过滤
-    logger.info(f"活跃状态: {[s.display_name for s in TaskStatus.get_active_statuses()]}")
-    logger.info(f"终态: {[s.display_name for s in TaskStatus.get_terminal_statuses()]}")
-    logger.info(f"按优先级排序: {[s.display_name for s in TaskStatus.get_by_priority()]}")
+    logger.info(f"Estados ativos: {[s.display_name for s in TaskStatus.get_active_statuses()]}")
+    logger.info(f"Estados finais: {[s.display_name for s in TaskStatus.get_terminal_statuses()]}")
+    logger.info(f"Ordenados por prioridade: {[s.display_name for s in TaskStatus.get_by_priority()]}")
 
 
 if __name__ == "__main__":

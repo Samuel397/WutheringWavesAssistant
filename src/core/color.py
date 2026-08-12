@@ -73,7 +73,7 @@ class ColorRule:
         elif isinstance(tol, tuple) and len(tol) == 3 and all(isinstance(t, int) or t is None for t in tol):
             pass
         else:
-            raise ValueError("tol must be an int or a tuple of 3 Optional[int] values.")
+            raise ValueError("tol deve ser um int ou uma tupla de 3 valores Optional[int].")
 
         compiled = []
 
@@ -147,7 +147,7 @@ class ColorRule:
         def valid(pts):
             if isinstance(pts, AnchorPoint):
                 if not scaler:
-                    raise ValueError("Scaler cannot be None")
+                    raise ValueError("Scaler não pode ser None")
                 pts = scaler.as_point(pts)
             x, y = pts
             return 0 <= x < w and 0 <= y < h and self._match_pixel(img[y, x], compiled)
@@ -156,7 +156,7 @@ class ColorRule:
             return any(valid(p) for p in self._points)
         elif mode == RuleMode.ALL:
             return all(valid(p) for p in self._points)
-        raise ValueError(f"Unsupported Mode: {mode}")
+        raise ValueError(f"Modo não compatível: {mode}")
 
     def match(self, img, scaler: Scaler = None):
         for compiled, mode in self._groups:

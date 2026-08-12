@@ -37,7 +37,7 @@ class HwndServiceImpl(WindowService):
         logger.debug(f"WindowService hwnd: {self._handle}")
         self._game_lang = None
         if context.spec and context.spec.game_lang:
-            self._game_lang = context.spec.game_lang
+            self._game_lang = Language(context.spec.game_lang)
         self._rlock: RLock = RLock()
 
         # runtime
@@ -53,7 +53,7 @@ class HwndServiceImpl(WindowService):
     def handle(self):
         with self._rlock:
             if not self._handle:
-                raise HwndError("handle is None")
+                raise HwndError("handle é None")
             return self._handle
 
     @property
@@ -82,7 +82,7 @@ class HwndServiceImpl(WindowService):
                 self._handle = hwnd_util.get_hwnd()
                 return True
             except Exception:
-                logger.exception("Get hwnd error!")
+                logger.exception("Erro ao obter hwnd!")
                 return False
 
     @raise_as(HwndError)
@@ -99,7 +99,7 @@ class HwndServiceImpl(WindowService):
                         logger.debug(f"Language: {self._lang.value}")
                         break
             if self._lang is None:
-                logger.error("Failed to get Language!")
+                logger.error("Falha ao obter o idioma!")
         return self._lang
 
     def set_lang(self, lang: Language):

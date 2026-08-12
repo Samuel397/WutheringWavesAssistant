@@ -65,7 +65,9 @@ def screenshot(hwnd, region: tuple[int, int, int, int] | None = None) -> np.ndar
     if bytes_per_pixel == 4:
         img = img[..., :3]  # 去除Alpha通道
     elif bytes_per_pixel != 3:
-        raise NotImplementedError(f"不支持的颜色深度: {bits_pixel}位/像素")
+        raise NotImplementedError(
+            f"Profundidade de cor não compatível: {bits_pixel} bits por pixel"
+        )
 
     # 清理资源
     win32gui.DeleteObject(save_bitmap.GetHandle())

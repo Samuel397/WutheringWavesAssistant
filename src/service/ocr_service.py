@@ -9,6 +9,7 @@ import numpy as np
 
 from src.core.contexts import Context
 from src.core.geometry import TextBox, BBox, RapidocrTextBox, PaddleocrTextBox, RapidocrRecTextBox
+from src.core.i18n import Language
 from src.core.interface import OCRService, ImgService, WindowService
 from src.core.pages import OcrResult
 from src.core.regions import Position, RapidocrPosition, TextPosition, DynamicPosition, PaddleocrPosition
@@ -227,12 +228,12 @@ class AbstractOcrService(OCRService, ABC):
         final_device = Device.CUDA if ocr_use_gpu else Device.CPU
         if self._device.is_gpu():
             if ocr_use_gpu:
-                logger.info("OCR using GPU ✅")
+                logger.info("OCR usando GPU ✅")
             elif is_fall_back:
-                logger.warning("OCR expected GPU, falling back to CPU ⚠️")
+                logger.warning("O OCR esperava GPU; alternando para CPU ⚠️")
         elif self._device == Device.CPU:
             if ocr_use_gpu:
-                logger.info("OCR expected GPU, CPU selected")
+                logger.info("O OCR esperava GPU; CPU selecionada")
                 final_device = Device.CPU
         else:
             raise NotImplementedError()
@@ -245,7 +246,10 @@ class RapidOcrServiceImpl(AbstractOcrService):
         logger.debug("Initializing %s", self.__class__.__name__)
         super().__init__(context, window_service, img_service)
 
-        self._engine = rapidocr_util.create_ocr(use_gpu=self.ocr_use_gpu)
+        self._engine = rapidocr_util.create_ocr(
+            use_gpu=self.ocr_use_gpu,
+            latin=self._window_service.get_lang() == Language.PT,
+        )
         self._last_time = time.time()
 
     def search_text(self, results: list[TextPosition], target: str) -> TextPosition | None:
@@ -298,7 +302,7 @@ class RapidOcrServiceImpl(AbstractOcrService):
             return self._ocr_det_rec(img)
         elif det is False and rec is True and cls is False:
             return self._ocr_det_rec(img)
-        raise NotImplementedError("不支持的识别方式")
+        raise NotImplementedError("Método de reconhecimento não compatível")
 
     def _ocr_det_rec(self, img: np.ndarray) -> list[TextPosition]:
         output = self._engine(img, use_det=True, use_rec=True, use_cls=False)
@@ -341,7 +345,7 @@ class RapidOcrServiceImpl(AbstractOcrService):
             output = self._engine(img, use_det=False, use_rec=True, use_cls=False)
             result = RapidocrRecTextBox.format(output)
         else:
-            raise NotImplementedError("不支持的识别方式")
+            raise NotImplementedError("Método de reconhecimento não compatível")
         ocr_result = OcrResult(itf.restore_boxes(result))
         # logger.debug(f"ocr_result: {ocr_result}")
         return ocr_result
@@ -361,7 +365,12 @@ class PaddleOcrServiceImpl(AbstractOcrService):
         super().__init__(context, window_service, img_service)
 
         from src.util import paddleocr_util
-        self._engine = paddleocr_util.create_paddleocr(use_gpu=self.ocr_use_gpu)
+        self._engine = paddleocr_util.create_paddleocr(
+            use_gpu=self.ocr_use_gpu,
+            # PaddleOCR selects its shared Latin recognizer with the official
+            # Portuguese language code rather than the model-family name.
+            lang="pt" if self._window_service.get_lang() == Language.PT else "ch",
+        )
         self._last_time = time.time()
 
     def search_text(self, results: list[TextPosition], target: str) -> TextPosition | None:
@@ -414,7 +423,7 @@ class PaddleOcrServiceImpl(AbstractOcrService):
             return self._ocr_det_rec(img)
         elif det is False and rec is True and cls is False:
             return self._ocr_det_rec(img)
-        raise NotImplementedError("不支持的识别方式")
+        raise NotImplementedError("Método de reconhecimento não compatível")
 
     def _ocr_det_rec(self, img: np.ndarray) -> list[TextPosition]:
         output = self._engine.ocr(img, det=True, rec=True, cls=False)
@@ -457,7 +466,7 @@ class PaddleOcrServiceImpl(AbstractOcrService):
             output = self._engine(img, use_det=False, use_rec=True, use_cls=False)
             result = PaddleocrTextBox.format(output, roi)
         else:
-            raise NotImplementedError("不支持的识别方式")
+            raise NotImplementedError("Método de reconhecimento não compatível")
         ocr_result = OcrResult(itf.restore_boxes(result))
         # logger.debug(f"ocr_result: {ocr_result}")
         return ocr_result

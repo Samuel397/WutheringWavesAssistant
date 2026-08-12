@@ -15,12 +15,24 @@ from src.config.gui_config import ParamConfig
 from src.core import environs
 from src.core.contexts import Context
 from src.core.exceptions import StopError
+from src.core.i18n import Language
 from src.core.message import ProcessBridge, MessageBus, MsgSource
 from src.core.tasks import EchoMergeProcessTask
 from src.core.workflow import TaskSpec, IPCManager
 from src.util import hwnd_util, file_util
 
 logger = logging.getLogger(__name__)
+
+
+def configured_game_language(param_config: ParamConfig) -> Language | None:
+    """Resolve the explicit GUI game language before any OCR service is built."""
+    if not param_config.gameLanguage:
+        return None
+    try:
+        return Language(param_config.gameLanguage)
+    except ValueError:
+        logger.warning("Idioma do jogo inválido na configuração: %s", param_config.gameLanguage)
+        return None
 
 
 class TaskOpsEnum(Enum):
@@ -44,7 +56,7 @@ class TaskMonitor:
 
         self.game_path = self.get_game_path()  # 先找运行中的游戏
         self.game_path = hwnd_util.get_ww_exe_path(self.game_path)
-        logger.info("Path: %s", self.game_path)
+        logger.info("Caminho: %s", self.game_path)
 
         # 游戏定时重启参数
         self.game_restart_duration = self._get_restart_duration()
@@ -84,7 +96,7 @@ class TaskMonitor:
         self._run_restart()
 
     def _run_SoarToTheBeatTask(self, task_name: str):
-        logger.info("任务监控线程开始运行")
+        logger.info("Thread de monitoramento de tarefas iniciada")
         try:
             sleep_seconds = 1
             from src.gui.common.globals import globalSignal
@@ -120,21 +132,21 @@ class TaskMonitor:
                 except queue.Empty:
                     pass
                 except Exception:
-                    logger.exception("解析event queue消息异常")
+                    logger.exception("Erro ao interpretar a mensagem da fila de eventos")
                 self._sleep(sleep_seconds)
         except KeyboardInterrupt:
             raise
         except StopError:
             pass
         except Exception:
-            logger.exception("任务监控线程异常")
+            logger.exception("Erro na thread de monitoramento de tarefas")
             raise
         finally:
-            logger.debug("任务监控线程已停止")
+            logger.debug("Thread de monitoramento de tarefas encerrada")
         return
 
     def _run_EchoMergeProcessTask(self, task_name: str):
-        logger.info("任务监控线程开始运行")
+        logger.info("Thread de monitoramento de tarefas iniciada")
         notice = {
             "DailyTask": "Daily Task",
             "EchoMergeProcessTask": "Data Merge",
@@ -157,26 +169,26 @@ class TaskMonitor:
                 except queue.Empty:
                     pass
                 except Exception:
-                    logger.exception("解析event queue消息异常")
+                    logger.exception("Erro ao interpretar a mensagem da fila de eventos")
                 self._sleep(sleep_seconds)
         except KeyboardInterrupt:
             raise
         except StopError:
             pass
         except Exception:
-            logger.exception("任务监控线程异常")
+            logger.exception("Erro na thread de monitoramento de tarefas")
             raise
         finally:
-            logger.debug("任务监控线程已停止")
+            logger.debug("Thread de monitoramento de tarefas encerrada")
         return
 
     def _run_restart(self):
         """ 监控任务函数，用于重启异常退出的任务，对于刷boss任务，还会检查和重启游戏 """
         if not self.running_tasks:
-            logger.warning("任务列表为空，任务监控线程退出")
+            logger.warning("A lista de tarefas está vazia; encerrando a thread de monitoramento")
             return
 
-        logger.info("任务监控线程开始运行")
+        logger.info("Thread de monitoramento de tarefas iniciada")
         try:
             first_sleep_seconds = 25
             # 检查游戏存活状态(重启游戏)
@@ -233,10 +245,10 @@ class TaskMonitor:
         except StopError:
             pass
         except Exception:
-            logger.exception("任务监控线程异常")
+            logger.exception("Erro na thread de monitoramento de tarefas")
             raise
         finally:
-            logger.info("任务监控线程已停止")
+            logger.info("Thread de monitoramento de tarefas encerrada")
 
     def _monitor_game(self):
         """ 检查游戏状态，异常则触发重启动作 """
@@ -244,15 +256,15 @@ class TaskMonitor:
         try:
             if crash_hwnd := hwnd_util.get_ue4_client_crash_hwnd():
                 is_alive = False
-                logger.warning("监测到UE4-Client Game已崩溃，关闭弹窗")
+                logger.warning("Travamento do UE4-Client Game detectado; fechando a janela")
                 hwnd_util.force_close_process(crash_hwnd)
             elif hwnd_util.get_hwnd(self.game_path, force=True):
                 is_alive = True
         except Exception:
-            logger.exception("游戏不存在")
+            logger.exception("Jogo não encontrado")
         if is_alive:
             return True
-        logger.warning("开始重启游戏")
+        logger.warning("Iniciando a reinicialização do jogo")
         self._restart_game()
         return False
 
@@ -262,14 +274,14 @@ class TaskMonitor:
         while time.monotonic() - start_time < 300:
             self._sleep(2)
             try:
-                logger.info("先尝试关闭游戏")
+                logger.info("Tentando fechar o jogo primeiro")
                 hwnd = hwnd_util.get_hwnd(self.game_path, force=True)
                 if hwnd:
                     hwnd_util.force_close_process(hwnd)
                 else:
-                    logger.warning("游戏窗口不存在")
+                    logger.warning("Janela do jogo não encontrada")
             except Exception:
-                logger.error("游戏不存在")
+                logger.error("Jogo não encontrado")
             self._sleep(5)
             subprocess.Popen([self.game_path],
                              creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
@@ -278,7 +290,7 @@ class TaskMonitor:
                 try:
                     hwnd = hwnd_util.get_hwnd(self.game_path, force=True)
                     if hwnd:
-                        logger.info("游戏已重启")
+                        logger.info("Jogo reiniciado")
                         self._sleep(10)
                         return True
                 except KeyboardInterrupt:
@@ -289,7 +301,7 @@ class TaskMonitor:
                 except Exception as e2:
                     logger.exception(e2)
                 self._sleep(5)
-        logger.error("游戏重启失败")
+        logger.error("Falha ao reiniciar o jogo")
         return False
 
     def start_game(self):
@@ -297,7 +309,7 @@ class TaskMonitor:
         try:
             if hwnd_util.get_hwnd(self.game_path, force=True):
                 return
-            logger.warning("游戏不存在，开始启动游戏")
+            logger.warning("Jogo não encontrado; iniciando o jogo")
             subprocess.Popen([self.game_path],
                              creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
         except Exception as e:
@@ -306,14 +318,14 @@ class TaskMonitor:
     def _close_game(self):
         """ 定时重启游戏时调用，用于关闭游戏 """
         try:
-            logger.info("定时关闭游戏")
+            logger.info("Fechamento programado do jogo")
             hwnd = hwnd_util.get_hwnd(self.game_path, force=True)
             if hwnd:
                 hwnd_util.force_close_process(hwnd)
             else:
-                logger.warning("游戏窗口不存在")
+                logger.warning("Janela do jogo não encontrada")
         except Exception:
-            logger.exception("定时关闭游戏时异常")
+            logger.exception("Erro durante o fechamento programado do jogo")
 
     def _get_restart_duration(self) -> int | None:
         """ 获取定时重启时间 秒，为空则是关闭定时 """
@@ -322,9 +334,12 @@ class TaskMonitor:
             period = self.param_config.autoRestartPeriod.strip().split("#")
             restart_duration = 3600 * int(period[0]) + 60 * int(period[1]) + int(period[2])
             if restart_duration < 10:
-                logger.warning("定时重启周期过短: %ss, 自动关闭定时", restart_duration)
+                logger.warning(
+                    "Intervalo de reinicialização programada curto demais: %ss; desativando a programação",
+                    restart_duration,
+                )
                 return None
-            logger.info("已开启定时重启游戏，周期: %ss", restart_duration)
+            logger.info("Reinicialização programada do jogo ativada; intervalo: %ss", restart_duration)
             return restart_duration
         except Exception:
             return None
@@ -396,27 +411,27 @@ class MainController:
         logger.debug("task_name: %s, task_ops: %s", task_name, task_ops)
         with self._lock:
             if task_ops == TaskOpsEnum.START.value:
-                logger.info("准备开启任务: %s", task_name)
+                logger.info("Preparando para iniciar a tarefa: %s", task_name)
                 if self.running_tasks.get(task_name):
-                    logger.warning("任务已存在，请勿重复提交")
-                    return False, "任务已存在，请勿重复提交"
+                    logger.warning("A tarefa já está em execução; não a envie novamente")
+                    return False, "A tarefa já está em execução; não a envie novamente"
 
                 self._run_task(task_name)
 
-                logger.info(f"v{__version__}, 任务已提交: {task_name}")
-                return True, "任务已提交"
+                logger.info(f"v{__version__}, tarefa enviada: {task_name}")
+                return True, "Tarefa enviada"
             elif task_ops == TaskOpsEnum.STOP.value:
-                logger.info("准备关闭任务: %s", task_name)
+                logger.info("Preparando para encerrar a tarefa: %s", task_name)
                 if not self.running_tasks.get(task_name):
-                    logger.warning("任务不存在，无需关闭")
-                    return True, "任务不存在，无需关闭"
+                    logger.warning("A tarefa não está em execução; não é necessário encerrá-la")
+                    return True, "A tarefa não está em execução; não é necessário encerrá-la"
 
                 self._stop_task(task_name)
 
-                logger.info(f"v{__version__}, 任务已停止: {task_name}")
-                return True, "任务已停止"
+                logger.info(f"v{__version__}, tarefa encerrada: {task_name}")
+                return True, "Tarefa encerrada"
             else:
-                raise NotImplementedError(f"不支持的类型{task_ops}")
+                raise NotImplementedError(f"Tipo não compatível: {task_ops}")
 
     def _run_task(self, task_name: str):
         spec = TaskSpec()
@@ -453,6 +468,7 @@ class MainController:
         spec.param_config_snapshot = ParamConfig.snapshot(self.param_config_path)
         spec.param_config = ParamConfig.build(content=spec.param_config_snapshot)
         spec.param_config.gamePath = spec.game_path  # 旧版
+        spec.game_lang = configured_game_language(spec.param_config)
         spec.user_config = Config.load_user_config().to_dict()
         if task_name == "AutoStorySkipProcessTask":
             spec.skip_is_open = True
@@ -492,7 +508,7 @@ class MainController:
                 globalSignal.taskFinishedSignal.emit(task_name)
 
     def stop(self):
-        logger.info("关闭主窗口")
+        logger.info("Fechando a janela principal")
         if self.task_monitor:
             self.task_monitor.stop(False)
         for task_name, value in self.running_tasks.items():

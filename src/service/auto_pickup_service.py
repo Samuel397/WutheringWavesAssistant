@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 
 import numpy as np
@@ -6,11 +7,23 @@ import numpy as np
 from src.core.contexts import Context
 from src.core.interface import ControlService, OCRService, ImgService, WindowService, ODService, BossInfoService
 from src.core.pages import Page, Position, TextMatch, ConditionalAction
+from src.core.pt_i18n import pt_fuzzy_regex
 from src.core.regions import DynamicPosition, TextPosition
 from src.service.page_event_service import PageEventAbstractService
 from src.util.wrap_util import timeit
 
 logger = logging.getLogger(__name__)
+
+
+def _pt_pickup_pattern(text: str) -> str:
+    """Escape a PT pickup label while tolerating OCR accent substitutions."""
+    return r"\s*".join(
+        pt_fuzzy_regex(re.escape(part))
+        for part in re.split(r"\s+", text.strip())
+    )
+
+
+PT_EXCLUSIVE_CHEST = rf"^(?:{_pt_pickup_pattern('Baú de Suprimentos Exclusivo')})$"
 
 
 class AutoPickupServiceImpl(PageEventAbstractService):
@@ -72,7 +85,7 @@ class AutoPickupServiceImpl(PageEventAbstractService):
     def page_action(page: Page, src_img: np.ndarray, img: np.ndarray, ocr_results: list[TextPosition]) -> bool:
         if not page.is_match(src_img, img, ocr_results):
             return False
-        logger.info("当前页面：%s", page.name)
+        logger.info("Página atual: %s", page.name)
         page.action(page.matchPositions)
         return True
 
@@ -86,10 +99,11 @@ class AutoPickupServiceImpl(PageEventAbstractService):
 
         def auto_pickup_page_action(positions: dict[str, Position]) -> bool:
             position = TextPosition.get(positions, "自动拾取")
-            logger.info("拾取: %s", position.text)
+            logger.info("Coletando: %s", position.text)
             # sleep_seconds = round(random.uniform(0.0001, 0.002), 6)
             self._control_service.pick_up(0.0001)
-            if position.text == "辉光奇藏箱":
+            if position.text == "辉光奇藏箱" or re.fullmatch(
+                    PT_EXCLUSIVE_CHEST, position.text, flags=re.IGNORECASE):
                 time.sleep(0.1)
                 self._control_service.dash_dodge()
             # self._control_service.pick_up(0.00001)
@@ -230,8 +244,24 @@ class AutoPickupServiceImpl(PageEventAbstractService):
             "潮汐之遗": "潮汐之遗",
         }
 
-        # 需完全匹配
-        self._pickup_regex_text = (r"^(" + "|".join(set(self._pickup_mapping.values())) + r")$")
+        # Traduções oficiais do TextMap PT pelos mesmos IDs das ações/baús em chinês.
+        self._pickup_pt_texts = {
+            "Absorver",
+            "Pegar",
+            "Baú Suspeito",
+            "Baú suspeito",
+            "Baú de Suprimentos Básico",
+            "Baú de Suprimentos Padrão",
+            "Baú de Suprimentos Avançado",
+            "Baú de Suprimentos Exclusivo",
+            "Baú de Suprimentos de Maré",
+            "Patrimônio das Marés",
+        }
+        # Os valores antigos contêm regexes tolerantes; as alternativas PT
+        # também aceitam perdas/substituições de acento observadas no OCR.
+        pickup_patterns = set(self._pickup_mapping.values())
+        pickup_patterns.update(_pt_pickup_pattern(text) for text in self._pickup_pt_texts)
+        self._pickup_regex_text = r"^(?:" + "|".join(pickup_patterns) + r")$"
 
         auto_pickup_page = Page(
             name="自动拾取",

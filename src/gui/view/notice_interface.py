@@ -129,5 +129,5 @@ class NoticeInterface(GalleryInterface):
                         current_items.append(line)
                 file.close()
         except Exception:
-            logger.exception("Failed to load changelog")
+            logger.exception("Falha ao carregar o changelog")
         return changelog_list

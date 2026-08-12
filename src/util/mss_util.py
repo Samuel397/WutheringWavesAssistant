@@ -15,7 +15,7 @@ def create_mss() -> MSSBase:
 
 def screenshot(sct: MSSBase, monitor: Monitor | tuple[int, int, int, int] | None = None) -> np.ndarray:
     if not isinstance(sct, MSSBase):
-        raise ValueError("参数异常")
+        raise ValueError("Parâmetro inválido")
     if monitor is None:
         sct_img = sct.shot()
     else:

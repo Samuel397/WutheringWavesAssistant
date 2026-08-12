@@ -1,50 +1,50 @@
-# 通用角色 (Generic) - 连招逻辑分析
+# Ressonador genérico — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
+| Campo | Valor |
 |------|------|
-| 角色名称 | generic（通用） |
-| 角色定位 | SubDPS（副输出） |
-| 元素属性 | 无 |
-| 协奏类型 | 无（不检测） |
-| 源文件 | `src/core/combat/resonator/generic.py` |
-| 适用对象 | 未注册定制连招的所有角色 |
+| Ressonador | `generic` (genérico) |
+| Função | SubDPS (DPS secundário) |
+| Atributo | Nenhum |
+| Tipo de Concerto | Nenhum (não detectado) |
+| Arquivo-fonte | `src/core/combat/resonator/generic.py` |
+| Aplicável a | Ressonadores sem combo personalizado registrado |
 
-## 概述
+## Visão geral
 
-`GenericResonator` 是所有未注册定制连招角色的默认实现。当编队中出现 `resonator_map` 中没有的角色时，系统自动使用此通用连招。
+`GenericResonator` é a implementação padrão para Ressonadores sem uma classe de combo registrada. Quando o nome reconhecido não existe em `resonator_map`, o sistema usa automaticamente esse combo genérico.
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-通用角色**不检测任何技能状态**，仅依赖固定的按键序列。
+O Ressonador genérico **não detecta o estado das habilidades**; ele depende apenas de sequências fixas de teclas.
 
-## 连招片段
+## Fragmentos de combo
 
-| 方法 | 描述 | 说明 |
+| Método | Ação | Descrição |
 |------|------|------|
-| `a4()` | 4段普攻 | 4次快速普攻 |
-| `Eaa()` | E+2段普攻 | E技能接两段普攻 |
-| `E()` | E技能 | 单独的E技能 |
-| `z()` | 重击 | 长按0.50秒 |
-| `Q()` | 声骸技能 | 声骸释放 |
-| `R()` | 共鸣解放 | 大招 |
+| `a4()` | Quatro ataques básicos | Quatro ataques rápidos |
+| `Eaa()` | E + dois ataques básicos | Habilidade de Ressonância seguida de dois ataques |
+| `E()` | Habilidade de Ressonância | Usa somente E |
+| `z()` | Ataque pesado | Mantém pressionado por 0,50 segundo |
+| `Q()` | Habilidade de Eco | Ativa o Eco |
+| `R()` | Liberação de Ressonância | Ativa R |
 
-### COMBO_SEQ（训练场连段参考）
+### `COMBO_SEQ` (referência para o campo de treinamento)
 
 ```python
 COMBO_SEQ = [
-    ["a", 0.05, 0.30],  # 普攻×4
+    ["a", 0.05, 0.30],  # Quatro ataques básicos
     ["a", 0.05, 0.30],
     ["a", 0.05, 0.30],
     ["a", 0.05, 0.30],
-    ["z", 0.50, 0.50],  # 重击
-    ["R", 0.05, 0.50],  # 大招
-    ["Q", 0.05, 0.50],  # 声骸
+    ["z", 0.50, 0.50],  # Ataque pesado
+    ["R", 0.05, 0.50],  # Liberação de Ressonância
+    ["Q", 0.05, 0.50],  # Habilidade de Eco
 ]
 ```
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```python
 def combo(self):
@@ -59,26 +59,26 @@ def combo(self):
     self.combo_action(self.Q(), False)
 ```
 
-1. 先打 a4() 四段普攻
-2. 随机打乱 [Eaa, R, z] 的顺序并依次执行
-3. 最后释放声骸 Q()
+1. Executa `a4()`, com quatro ataques básicos.
+2. Embaralha `[Eaa, R, z]` e executa os três itens nessa ordem aleatória.
+3. Por fim, ativa o Eco com `Q()`.
 
-## 适用角色
+## Ressonadores aplicáveis
 
-以下角色在编队中使用通用连招：
+Os seguintes Ressonadores usam o combo genérico:
 
-- 菲比 (Phoebe) - 虽有 BasePhoebe，但未注册到 `resonator_map`，且 `combo()` 为空实现
-- 所有其他未注册角色
+- Phoebe - `BasePhoebe` existe, mas não está registrada em `resonator_map`, e `combo()` não possui implementação
+- Qualquer outro Ressonador sem registro específico
 
-> **注意**：漂泊者 (Rover) 虽不在 `resonator_map` 中，但 `set_resonators()` 对其做了特殊处理，直接使用 `Rover` 实例及其自身的 `combo()`，不会回退到 GenericResonator。详见 [rover.md](rover.md)。
+> **Nota:** Rover não aparece em `resonator_map`, mas recebe tratamento específico em `set_resonators()`. O sistema instancia `Rover` e usa seu próprio `combo()`, sem recorrer a `GenericResonator`. Consulte [rover.md](rover.md).
 
-## 设计特点
+## Características do projeto
 
-1. **通用兼容** - 对所有角色都能工作的最简连招
-2. **随机打乱** - Eaa/R/z 三个技能随机排列，避免固定模式
-3. **安全回退** - 作为所有未定制角色的后备方案
-4. **无状态检测** - 不截图不检测，纯固定序列执行
+1. **Compatibilidade ampla** - sequência simples que funciona com qualquer Ressonador
+2. **Ordem aleatória** - embaralha `Eaa`, `R` e `z` para evitar um padrão rígido
+3. **Contingência segura** - serve como alternativa para Ressonadores sem implementação própria
+4. **Sem detecção de estado** - executa a sequência sem analisar capturas de tela
 
 ---
 
-*最后更新: 2026-02-07*
+*Última atualização: 07/02/2026*

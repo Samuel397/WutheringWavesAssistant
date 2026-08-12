@@ -1,126 +1,126 @@
-# 菲比 (Phoebe) - 连招逻辑分析
+# Phoebe — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
-|------|------|
-| 角色名称 | 菲比 (Phoebe) |
-| 角色定位 | Support（辅助） |
-| 元素属性 | 衍射 (Spectro) |
-| 协奏类型 | 黄圈 (concerto_spectro) |
-| 版本 | v2.1 |
-| 源文件 | `src/core/combat/resonator/phoebe.py` |
-| 注册状态 | ⚠️ 未注册到 `resonator_map`，使用通用连招 |
+| Propriedade | Valor |
+|---|---|
+| Personagem | Phoebe |
+| Função | Suporte |
+| Atributo | Fotônico (`Spectro`) |
+| Tipo de Concerto | Círculo amarelo (`concerto_spectro`) |
+| Versão | v2.1 |
+| Arquivo-fonte | `src/core/combat/resonator/phoebe.py` |
+| Registro | ⚠️ Não registrada em `resonator_map`; usa o combo genérico |
 
-## 角色机制
+## Mecânica do personagem
 
-菲比是枪系辅助角色，拥有独特的**祈愿/福音**系统：
+Phoebe é uma personagem de suporte que usa pistolas e possui um sistema próprio de **Oração/Voz Divina**.
 
-### 祈愿系统
+### Sistema de Oração
 
-- **祈愿能量上限 120 点**，24 秒自动涨满
-- **未选择形态**时检测血条上方4个点的蓝色像素
-- **选择形态后**检测位置右移
+- A **Oração possui no máximo 120 pontos** e é preenchida automaticamente em 24 segundos.
+- Antes da escolha de um estado, a detecção verifica quatro pixels azuis acima da barra de vida.
+- Após a escolha, o ponto de detecção se desloca para a direita.
 
-### 福音系统
+### Sistema de Voz Divina
 
-- **福音能量上限 60 点**
-- **赦罪状态**（输出模式）：进入时获得 60 点福音，强化重击消耗 15 点，可放 4 次
-- **告解状态**（辅助模式）：进入时获得 60 点福音，强化重击消耗 30 点，加 5 层光噪，可放 2 次
-- 福音能量条**黄色**为输出模式，**蓝白色**为辅助模式
+- A **Voz Divina possui no máximo 60 pontos**.
+- **Absolvição** (modo de dano): concede 60 pontos ao entrar no estado; cada Ataque Pesado aprimorado consome 15 pontos, permitindo até 4 usos.
+- **Confissão** (modo de suporte): concede 60 pontos ao entrar no estado; cada Ataque Pesado aprimorado consome 30 pontos, aplica 5 acúmulos de Estridência Fotônica e permite até 2 usos.
+- A barra da Voz Divina fica **amarela** durante a Absolvição e **azul-clara** durante a Confissão.
 
-### 操作方式
+### Operação
 
-- 祈愿能量满、福音能量空时：
-  - **长按普攻** → 进入赦罪状态（输出）
-  - **长按E** → 进入告解状态（辅助）
-- 输出方式：3 普攻 + 1 重击循环，消耗完福音后等祈愿涨满
+- Quando a Oração está cheia e a Voz Divina está vazia:
+  - mantenha o **Ataque Básico** pressionado para entrar em Absolvição;
+  - mantenha **E** pressionado para entrar em Confissão.
+- No ciclo de dano, execute 3 Ataques Básicos + 1 Ataque Pesado até consumir a Voz Divina e aguarde a Oração recarregar.
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 祈愿检测
+### Detecção de Oração
 
-| 检测项 | 逻辑 | 说明 |
-|--------|------|------|
-| 祈愿（基础形态） | AND | 未选择形态时4点检测 |
-| 祈愿（切换形态后） | OR | 选择形态后单点检测 |
+| Item detectado | Lógica | Observação |
+|---|---|---|
+| Oração (estado inicial) | AND | Verifica quatro pontos antes da escolha de estado |
+| Oração (após trocar de estado) | OR | Verifica um ponto após a troca |
 
-### 福音检测
+### Detecção de Voz Divina
 
-| 检测项 | 逻辑 | 说明 |
-|--------|------|------|
-| 福音 15 | OR | 福音≥15点（3个检测点） |
-| 福音 30 | OR | 福音≥30点（3个检测点） |
+| Item detectado | Lógica | Observação |
+|---|---|---|
+| Voz Divina 15 | OR | Voz Divina ≥ 15 pontos; três pontos de detecção |
+| Voz Divina 30 | OR | Voz Divina ≥ 30 pontos; três pontos de detecção |
 
-### 增强状态检测
+### Detecção dos estados aprimorados
 
-| 检测项 | 逻辑 | 说明 |
-|--------|------|------|
-| 赦罪增强（输出） | AND | 福音条中间黄色 `(175,234,248)` |
-| 告解增强（辅助） | AND | 福音条中间蓝白色 `(255,255,253)` |
+| Item detectado | Lógica | Observação |
+|---|---|---|
+| Absolvição (dano) | AND | Amarelo no centro da barra: `(175,234,248)` |
+| Confissão (suporte) | AND | Azul-claro no centro da barra: `(255,255,253)` |
 
-### 技能检测
+### Detecção de habilidades
 
-| 检测项 | 逻辑 | 说明 |
-|--------|------|------|
-| 共鸣技能 E1 | AND | E技能就绪 |
-| 共鸣技能 E2 | AND | 第二段E技能 |
-| 声骸技能 | OR | 声骸就绪 |
-| 共鸣解放 R | OR | 大招就绪 |
+| Item detectado | Lógica | Observação |
+|---|---|---|
+| Habilidade de Ressonância E1 | AND | Primeira forma de E pronta |
+| Habilidade de Ressonância E2 | AND | Segunda forma de E pronta |
+| Habilidade de Eco | OR | O Eco está pronto |
+| Liberação de Ressonância R | OR | R está pronto |
 
-## 连招片段
+## Trechos de combo
 
-菲比提供了丰富的连招片段，但 `combo()` 方法未实现：
+Phoebe oferece diversos trechos de combo, mas o método `combo()` ainda não foi implementado:
 
-| 方法 | 描述 | 说明 |
-|------|------|------|
-| `a4()` | 4段普攻 | 完整4段普攻 |
-| `a_intro()` | 变奏入场普攻 | 1.3秒覆盖变奏时间 |
-| `a2_end()` | 后2段普攻 | 4a的后两段 |
-| `z_musical_essence_3()` | 3格音律重击 | 消耗3格能量长按重击 |
-| `E()` | E技能 | 两次冗余按E |
-| `E3a()` | E+3段普攻 | E加一层风蚀，从第2段打 |
-| `jEz()` | 跳E重击 | 空中E接3格音律重击 |
-| `jEaaa()` | 跳+3普攻 | 跳接普攻（方法名有E但实际不含e按键） |
-| `jEaaajaaa()` | 双循环 | jE+普攻+j+普攻循环 |
-| `jaaa()` | 跳+3普攻 | 空中下落接普攻 |
-| `Q()` | 声骸技能 | 声骸释放 |
-| `R_aero_erosion()` | R风蚀 | 大招风蚀版 |
-| `R_spectro_frazzle()` | R光噪 | 大招光噪版+普攻收尾 |
+| Método | Descrição | Observação |
+|---|---|---|
+| `a4()` | 4 ataques básicos | Sequência completa de quatro ataques |
+| `a_intro()` | Ataque da Introdução | Aguarda 1.3 segundo para cobrir a animação de entrada |
+| `a2_end()` | 2 ataques finais | Executa os dois últimos ataques de `a4()` |
+| `z_musical_essence_3()` | Ataque Pesado com 3 segmentos | Consome três segmentos e mantém o Ataque Pesado pressionado |
+| `E()` | Habilidade E | Pressiona E duas vezes como redundância |
+| `E3a()` | E + 3 ataques básicos | E aplica um acúmulo; a sequência começa no segundo Ataque Básico |
+| `jEz()` | Salto + E + Ataque Pesado | Usa E no ar e, em seguida, o Ataque Pesado com três segmentos |
+| `jEaaa()` | Salto + 3 ataques básicos | O nome contém E, mas a sequência não pressiona a tecla `e` |
+| `jEaaajaaa()` | Ciclo duplo | Alterna `jE`, ataques básicos, salto e novos ataques básicos |
+| `jaaa()` | Salto + 3 ataques básicos | Executa ataques após o salto |
+| `Q()` | Habilidade de Eco | Usa o Eco |
+| `R_aero_erosion()` | R para Erosão Eólica | Variante de R para Erosão Eólica |
+| `R_spectro_frazzle()` | R para Estridência Fotônica | Variante de R para Estridência Fotônica, seguida de Ataque Básico |
 
-### 枪系特殊操作
+### Operações especiais com pistolas
 
-COMBO_SEQ 中包含枪系通用操作：
+`COMBO_SEQ` contém operações genéricas para personagens que usam pistolas:
 
-- **瞄准加特林** - `G` 瞄准 + `a` 攻击的高频交替
-- **瞄准无限戳** - `a` 攻击 + `G` 瞄准的慢节奏循环
+- **Metralhadora em mira** — alterna rapidamente `G` para mirar e `a` para atacar.
+- **Ataque contínuo em mira** — alterna `a` e `G` em ritmo mais lento.
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```python
 def combo(self):
-    # 赞菲队使用辅助菲比
-    pass  # ← 未实现
+    # Usa Phoebe como suporte na equipe de Zani
+    pass  # Ainda não implementado
 ```
 
-⚠️ **combo() 为空实现**。菲比未注册到 `resonator_map`，实际使用时回退到 `GenericResonator` 通用连招。
+⚠️ **`combo()` está vazio.** Phoebe não está registrada em `resonator_map`; em uso real, a execução recua para o combo genérico de `GenericResonator`.
 
-## 设计现状
+## Estado atual do projeto
 
-1. `BasePhoebe` 中完整实现了所有技能状态检测方法
-2. `Phoebe` 中实现了丰富的连招片段方法
-3. `COMBO_SEQ` 包含了完整的训练场连段（含枪系特殊操作）
-4. **唯一缺失的是 `combo()` 决策逻辑**
+1. `BasePhoebe` implementa todos os métodos de detecção de estado das habilidades.
+2. `Phoebe` implementa diversos métodos com trechos de combo.
+3. `COMBO_SEQ` contém a sequência completa do campo de treinamento, inclusive as operações especiais com pistolas.
+4. **A única parte ausente é a lógica de decisão de `combo()`.**
 
-## 后续开发方向
+## Próximos passos sugeridos
 
-根据代码注释，菲比的连招逻辑应该围绕以下核心循环：
+Segundo os comentários do código, a lógica de Phoebe deve girar em torno deste ciclo:
 
-1. 等祈愿能量涨满
-2. 消耗祈愿进入赦罪/告解状态，获得福音
-3. 三普攻 + 一重击循环消耗福音
-4. 福音空后等祈愿涨满，重新循环
+1. Aguardar o preenchimento da Oração.
+2. Consumir a Oração para entrar em Absolvição ou Confissão e obter Voz Divina.
+3. Consumir a Voz Divina com ciclos de três Ataques Básicos + um Ataque Pesado.
+4. Quando a Voz Divina acabar, aguardar a Oração recarregar e repetir o ciclo.
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 2026-02-06*

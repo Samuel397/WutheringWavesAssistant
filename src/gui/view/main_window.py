@@ -158,7 +158,7 @@ class MainWindow(FluentWindow):
             self.setWindowTitle(self.windowTitle() + self.tr(" *检查更新失败"))
             return
         if result is False:
-            logger.debug("无新版本需要更新")
+            logger.debug("Nenhuma atualização disponível")
             return
         if result is True:
             msg = self.tr(" *有新版本 {version}").format(version=self.remoteVersion.version)

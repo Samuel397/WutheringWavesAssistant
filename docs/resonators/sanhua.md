@@ -1,79 +1,77 @@
-# 散华 (Sanhua) - 连招逻辑分析
+# Sanhua — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
-|------|------|
-| 角色名称 | 散华 (Sanhua) |
-| 角色定位 | Support（辅助） |
-| 元素属性 | 冷凝 (Glacio) |
-| 协奏类型 | 蓝圈 (concerto_glacio) |
-| 版本 | 常驻 |
-| 源文件 | `src/core/combat/resonator/sanhua.py` |
+| Propriedade | Valor |
+|---|---|
+| Personagem | Sanhua |
+| Função | Suporte |
+| Atributo | Glacial (`Glacio`) |
+| Tipo de Concerto | Círculo azul (`concerto_glacio`) |
+| Versão | Permanente |
+| Arquivo-fonte | `src/core/combat/resonator/sanhua.py` |
 
-## 角色机制
+## Mecânica do personagem
 
-散华是经典的辅助角色，核心是快速释放 E + 重击（冰刺）+ 大招后切人：
+Sanhua é uma personagem clássica de suporte. Seu núcleo consiste em usar rapidamente E, um Ataque Pesado para detonar os espinhos de gelo e a Liberação de Ressonância antes de trocar de personagem:
 
-- **Ez** - E 接重击打出冰刺
-- **ERz** - E + R + 长按重击（大红莲华）
-- **EQ** - E + 声骸合轴
+- **Ez** — E seguido de Ataque Pesado para detonar o gelo.
+- **ERz** — E + R + Ataque Pesado mantido pressionado.
+- **EQ** — E combinado com a Habilidade de Eco.
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 技能检测
+| Item detectado | Cor do ícone | Lógica | Observação |
+|---|---|---|---|
+| Habilidade de Ressonância E | Branco `(255,255,255)` | AND | E está pronto |
+| Habilidade de Eco Q | Branco `(255,255,255)` | OR | O Eco está pronto |
+| Liberação de Ressonância R | Branco/laranja `(255,193,142)/(255,214,181)` | OR | R está pronto; aceita várias cores |
 
-| 检测项 | 图标颜色 | 逻辑 | 说明 |
-|--------|----------|------|------|
-| 共鸣技能 E | 白色 `(255,255,255)` | AND | E技能就绪 |
-| 声骸技能 Q | 白色 `(255,255,255)` | OR | 声骸就绪 |
-| 共鸣解放 R | 白色/橙色 `(255,193,142)/(255,214,181)` | OR | 大招就绪（支持多种颜色） |
+## Trechos de combo
 
-## 连招片段
+| Método | Descrição | Observação |
+|---|---|---|
+| `a3()` | 3 ataques básicos | Ataca algumas vezes após a entrada pela Habilidade de Introdução |
+| `z()` | Detonação com Ataque Pesado | Mantém pressionado por 0.915 segundo para detonar o gelo |
+| `Ez()` | E + Ataque Pesado | Usa E e detona o gelo com o Ataque Pesado |
+| `Rz()` | R + Ataque Pesado | Usa R e mantém o Ataque Pesado pressionado |
+| `ERz()` | E + R + Ataque Pesado | Combo principal de Sanhua |
+| `Q()` | Habilidade de Eco | Usa um Eco, como a Garça da Impermanência |
+| `EQ()` | E + Habilidade de Eco | Sincroniza E com o Eco |
 
-| 方法 | 描述 | 说明 |
-|------|------|------|
-| `a3()` | 3段普攻 | 变奏入场后随便打几下 |
-| `z()` | 重击爆裂 | 长按0.915秒冰刺 |
-| `Ez()` | E+重击 | E接重击冰刺 |
-| `Rz()` | R+重击 | 大招接长按重击 |
-| `ERz()` | E+R+重击 | 散华核心大红莲华连招 |
-| `Q()` | 声骸技能 | 无常凶鹭等声骸 |
-| `EQ()` | E+声骸 | E接声骸合轴 |
-
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```
-入场: a3() 变奏下砸，打几下普攻
+Entrada: a3() após a Habilidade de Introdução; executa alguns ataques básicos
 
-截图检测技能状态
+Captura a tela e verifica o estado das habilidades
 
-1. 大红莲华 - 有R:
-   ├─ 有E → ERz() (E+R+长按重击)
-   └─ 无E → Rz() (R+长按重击)
+1. R disponível:
+   ├─ E disponível → ERz() (E + R + Ataque Pesado mantido)
+   └─ E indisponível → Rz() (R + Ataque Pesado mantido)
    └─ return
 
-2. 有E:
-   ├─ 有声骸 → EQ() (E+声骸合轴)
-   └─ 无声骸 → Ez() (E+重击冰刺)
+2. E disponível:
+   ├─ Eco disponível → EQ() (E + Eco sincronizados)
+   └─ Eco indisponível → Ez() (E + detonação de gelo)
    └─ return
 
-3. 仅有声骸:
-   └─ Q() 释放声骸
+3. Somente o Eco está disponível:
+   └─ Q() usa o Eco
    └─ return
 
-4. 兜底:
-   └─ a3() 普攻
+4. Alternativa final:
+   └─ a3() executa ataques básicos
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **极简高效** - 散华连招简洁明了，优先级清晰
-2. **R优先** - 有大招时优先打大红莲华（ERz），散华作为辅助核心输出
-3. **E合轴** - 有声骸时EQ合轴，无声骸时Ez打冰刺
-4. **长按重击** - ERz中的重击按下1.90秒（比训练场1.85稍长以确保释放）
-5. **R颜色多样** - 大招图标支持白色和橙色两种状态检测
+1. **Simples e eficiente** — a sequência de Sanhua é direta e possui prioridades claras.
+2. **Prioridade para R** — quando a Liberação de Ressonância está disponível, o código prioriza `ERz()` para combinar suporte e dano.
+3. **Sincronização de E** — com o Eco disponível, executa `EQ()`; sem ele, usa `Ez()` para detonar o gelo.
+4. **Ataque Pesado mantido** — o Ataque Pesado de `ERz()` permanece pressionado por 1.90 segundo, um pouco acima dos 1.85 segundo usados no campo de treinamento, para garantir a ativação.
+5. **Várias cores para R** — a detecção da Liberação de Ressonância aceita os estados branco e laranja do ícone.
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 2026-02-06*

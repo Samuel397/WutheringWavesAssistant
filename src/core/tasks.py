@@ -68,7 +68,10 @@ class ProcessTask(ABC):
         elapsed_seconds = (self._end_time - self._start_time).total_seconds()
         hours, remainder = divmod(elapsed_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
-        logger.info(f"[{self.name}] 任务结束，已运行: {int(hours)}h {int(minutes)}m {seconds:.2f}s")
+        logger.info(
+            f"[{self.name}] Tarefa encerrada; tempo de execução: "
+            f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
+        )
         self._stop(timeout=timeout)
         return self
 
@@ -82,7 +85,7 @@ class ProcessTask(ABC):
             if timeout > 0:
                 self._process.join(timeout)
         except Exception:
-            logger.exception(f"任务[{self.name}]结束失败")
+            logger.exception(f"Falha ao encerrar a tarefa [{self.name}]")
 
     def join(self):
         self._process.join()
@@ -97,7 +100,10 @@ class ProcessTask(ABC):
         else:
             start_time_last = self._start_time
         restart_time = datetime.now()
-        logger.warning(f"[{self.name}] 任务重启，上次重启时间: {start_time_last.strftime("%Y-%m-%d %H:%M:%S")}")
+        logger.warning(
+            f"[{self.name}] Tarefa reiniciada; última reinicialização: "
+            f"{start_time_last.strftime('%Y-%m-%d %H:%M:%S')}"
+        )
         self._restart_time_list.append(restart_time)
         self._process = Process(
             target=self.get_task(), args=self.args, kwargs=self.kwargs, name=self.name, daemon=self.daemon)
@@ -123,7 +129,7 @@ class ThreadTask(ProcessTask):
             if timeout > 0:
                 self._process.join(timeout)
         except Exception:
-            logger.exception(f"任务[{self.name}]结束失败")
+            logger.exception(f"Falha ao encerrar a tarefa [{self.name}]")
 
     def restart(self, timeout=3):
         self._stop(timeout=timeout)
@@ -132,7 +138,10 @@ class ThreadTask(ProcessTask):
         else:
             start_time_last = self._start_time
         restart_time = datetime.now()
-        logger.warning(f"[{self.name}] 任务重启，上次重启时间: {start_time_last.strftime("%Y-%m-%d %H:%M:%S")}")
+        logger.warning(
+            f"[{self.name}] Tarefa reiniciada; última reinicialização: "
+            f"{start_time_last.strftime('%Y-%m-%d %H:%M:%S')}"
+        )
         self._restart_time_list.append(restart_time)
         # self._process = Process(
         #     target=self.get_task(), args=self.args, kwargs=self.kwargs, name=self.name, daemon=self.daemon)
@@ -226,13 +235,13 @@ def create_parent_monitor(event, pid: int):
             try:
                 if not parent_process.is_running():
                     event.clear()
-                    logger.info("检测到父进程结束，退出任务")
+                    logger.info("Processo pai encerrado; saindo da tarefa")
                     break  # 父进程退出后，子进程退出
             except Exception as e:
                 logger.exception(e)
                 return
             time.sleep(5)
-        logger.info("父进程监控结束")
+        logger.info("Monitoramento do processo pai encerrado")
 
     monitor_thread = threading.Thread(target=run, name="ParentPidMonitorThread")
     monitor_thread.daemon = True
@@ -254,7 +263,7 @@ def create_mouse_reset_monitor(event, spec: TaskSpec, ipc: IPCManager, **kwargs)
 
 def mouse_reset_task_run(event, spec, ipc, **kwargs):
     logging_config.setup_logging(ipc.log_queue)
-    logger.info("鼠标重置任务开始运行")
+    logger.info("Tarefa de redefinição do mouse iniciada")
     from pynput.mouse import Controller
     mouse = Controller()
     last_position = mouse.position
@@ -269,7 +278,7 @@ def mouse_reset_task_run(event, spec, ipc, **kwargs):
                     hwnd = hwnd_util.get_hwnd()
                     continue
             except Exception:
-                logger.warning("MouseReset: 获取窗口句柄时异常")
+                logger.warning("MouseReset: erro ao obter o identificador da janela")
                 time.sleep(5)
                 continue
             current_position = mouse.position
@@ -290,7 +299,7 @@ def mouse_reset_task_run(event, spec, ipc, **kwargs):
     except KeyboardInterrupt:
         pass
     finally:
-        logger.info("鼠标重置任务结束")
+        logger.info("Tarefa de redefinição do mouse encerrada")
 
 
 def auto_boss_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
@@ -299,7 +308,7 @@ def auto_boss_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
 
         logging_config.setup_logging(ipc.log_queue)
         # logger.debug(f"spec: {json.dumps(spec.__dict__)}")
-        logger.info("刷boss任务进程开始运行")
+        logger.info("Processo da tarefa de farm de chefes iniciado")
 
         context = Context()
         context.spec = spec
@@ -307,7 +316,7 @@ def auto_boss_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
         context.param_config = spec.param_config
         # 新旧配置兼容
         context.app_config.TargetBoss = context.param_config.get_boss_name_list()
-        logger.info("Boss Rush: %s", context.app_config.TargetBoss)
+        logger.info("Farm de chefes: %s", context.app_config.TargetBoss)
         context.app_config.DungeonWeeklyBossLevel = context.param_config.get_boss_level_int()
 
         container = Container.build(context)
@@ -356,10 +365,10 @@ def auto_boss_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
                     page_event_service.execute(src_img=src_img, img=img, ocr_results=result)
                 except ScreenshotError:
                     try:
-                        logger.warning("截图异常，关闭游戏")
+                        logger.warning("Erro na captura de tela; fechando o jogo")
                         hwnd_util.force_close_process(window_service.window)
                     except Exception:
-                        logger.error("关闭游戏时异常")
+                        logger.error("Erro ao fechar o jogo")
                     raise
         except KeyboardInterrupt:
             logger.warning("KeyboardInterrupt")
@@ -372,7 +381,7 @@ def auto_boss_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
                 keymouse_util.key_up(window_service.window, "W")
             except Exception:
                 pass
-            logger.info("刷boss任务进程结束")
+            logger.info("Processo da tarefa de farm de chefes encerrado")
     except Exception as e:
         logger.exception(e)
 
@@ -382,7 +391,7 @@ def auto_pickup_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
 
     logging_config.setup_logging(ipc.log_queue)
     # logger.debug(f"spec: {json.dumps(spec.__dict__)}")
-    logger.info("自动拾取任务进程开始运行")
+    logger.info("Processo da tarefa de coleta automática iniciado")
 
     context = Context()
     context.spec = spec
@@ -415,10 +424,10 @@ def auto_pickup_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
             try:
                 page_event_service.execute()
             except ScreenshotError:
-                logger.exception("截图失败")
+                logger.exception("Falha ao capturar a tela")
                 time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("自动拾取任务进程结束")
+        logger.info("Processo da tarefa de coleta automática encerrado")
     except Exception as e:
         logger.exception(e)
     finally:
@@ -435,7 +444,7 @@ def auto_story_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
 
     logging_config.setup_logging(ipc.log_queue)
     # logger.debug(f"spec: {json.dumps(spec.__dict__)}")
-    logger.info("自动剧情任务进程开始运行")
+    logger.info("Processo da tarefa de história automática iniciado")
 
     context = Context()
     context.spec = spec
@@ -471,10 +480,10 @@ def auto_story_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
             try:
                 page_event_service.execute()
             except ScreenshotError as e:
-                logger.exception("截图失败")
+                logger.exception("Falha ao capturar a tela")
                 time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("自动剧情任务进程结束")
+        logger.info("Processo da tarefa de história automática encerrado")
     except Exception as e:
         logger.exception(e)
     finally:
@@ -528,7 +537,7 @@ def release_press_key(ctx):
 def echo_merge_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
     try:
         ctx, container = task_init(event, spec, ipc, **kwargs)
-        logger.info("声骸融合任务进程开始运行")
+        logger.info("Processo da tarefa de fusão de Ecos iniciado")
 
         time.sleep(0.2)
         logger.debug(spec.game_path)
@@ -550,10 +559,10 @@ def echo_merge_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
                 workflow.execute()
             except ScreenshotError:
                 try:
-                    logger.warning("截图异常，关闭游戏")
+                    logger.warning("Erro na captura de tela; fechando o jogo")
                     hwnd_util.force_close_process(ctx.window_service.window)
                 except Exception:
-                    logger.error("关闭游戏时异常")
+                    logger.error("Erro ao fechar o jogo")
                 raise
         except KeyboardInterrupt:
             logger.warning("KeyboardInterrupt")
@@ -565,7 +574,7 @@ def echo_merge_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
             }, block=True)
         finally:
             release_press_key(ctx)
-            logger.info("声骸融合任务进程结束")
+            logger.info("Processo da tarefa de fusão de Ecos encerrado")
     except Exception as e:
         logger.exception(e)
 
@@ -573,7 +582,7 @@ def echo_merge_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
 def soar_to_the_beat_macro_replay_task(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
     try:
         ctx, container = task_init(event, spec, ipc, is_thread=True, **kwargs)
-        logger.info("自动音游任务线程开始运行")
+        logger.info("Thread da tarefa automática de jogo rítmico iniciada")
         logger.debug(spec.game_path)
         time.sleep(0.1)
 
@@ -582,9 +591,14 @@ def soar_to_the_beat_macro_replay_task(event, spec: TaskSpec, ipc: IPCManager, *
         # 用户模板
         if config.useUserTemplate:
             if not config.userTemplate:
-                logger.error("勾选使用自定义，但未选择自定义模板")
+                logger.error("O modelo personalizado foi ativado, mas nenhum modelo foi selecionado")
                 ctx.ipc.event_queue.put({
-                    "task": {"SoarToTheBeatMacroReplayTask": ["failed", "勾选使用自定义，但未选择自定义模板"]}
+                    "task": {
+                        "SoarToTheBeatMacroReplayTask": [
+                            "failed",
+                            "O modelo personalizado foi ativado, mas nenhum modelo foi selecionado",
+                        ]
+                    }
                 }, block=True)
                 time.sleep(0.1)
                 return
@@ -592,9 +606,14 @@ def soar_to_the_beat_macro_replay_task(event, spec: TaskSpec, ipc: IPCManager, *
         else:
             # 预设模板
             if not config.defaultTemplate:
-                logger.error("未选择模板文件")
+                logger.error("Nenhum arquivo de modelo foi selecionado")
                 ctx.ipc.event_queue.put({
-                    "task": {"SoarToTheBeatMacroReplayTask": ["failed", "未选择模板文件"]}
+                    "task": {
+                        "SoarToTheBeatMacroReplayTask": [
+                            "failed",
+                            "Nenhum arquivo de modelo foi selecionado",
+                        ]
+                    }
                 }, block=True)
                 time.sleep(0.1)
                 return
@@ -620,7 +639,7 @@ def soar_to_the_beat_macro_replay_task(event, spec: TaskSpec, ipc: IPCManager, *
             time.sleep(0.1)
         finally:
             release_press_key(ctx)
-            logger.info("自动音游任务线程结束")
+            logger.info("Thread da tarefa automática de jogo rítmico encerrada")
     except Exception as e:
         logger.exception(e)
 
@@ -628,7 +647,7 @@ def soar_to_the_beat_macro_replay_task(event, spec: TaskSpec, ipc: IPCManager, *
 def soar_to_the_beat_macro_record_task(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
     try:
         ctx, container = task_init(event, spec, ipc, is_thread=True, **kwargs)
-        logger.info("按键宏录制任务线程开始运行")
+        logger.info("Thread da tarefa de gravação de macro iniciada")
 
         time.sleep(0.2)
         logger.debug(spec.game_path)
@@ -656,7 +675,7 @@ def soar_to_the_beat_macro_record_task(event, spec: TaskSpec, ipc: IPCManager, *
             time.sleep(0.2)
         finally:
             release_press_key(ctx)
-            logger.info("按键宏录制任务线程结束")
+            logger.info("Thread da tarefa de gravação de macro encerrada")
     except Exception as e:
         logger.exception(e)
 
@@ -672,7 +691,7 @@ def daily_task(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
     try:
 
         ctx, container = task_init(event, spec, ipc, source=MsgSource.DAILY_TASK, **kwargs)
-        logger.info(f"每日任务开始运行, task_id: {spec.task_id}")
+        logger.info(f"Tarefa diária iniciada, task_id: {spec.task_id}")
         ctx.runtime.send(MsgType.TASK_STATUS, status=MsgTaskStatus.RUNNING)
 
         # 1. 先获取当前鼠标位置
@@ -713,7 +732,7 @@ def daily_task(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
             }, block=True)
             time.sleep(0.1)
         finally:
-            logger.info(f"每日任务结束, task_id: {spec.task_id}")
+            logger.info(f"Tarefa diária encerrada, task_id: {spec.task_id}")
             release_press_key(ctx)
 
     except Exception as e:
@@ -724,7 +743,7 @@ def explore_task(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
     try:
 
         ctx, container = task_init(event, spec, ipc, source=MsgSource.DAILY_TASK, **kwargs)
-        logger.info(f"探索任务开始运行, task_id: {spec.task_id}")
+        logger.info(f"Tarefa de exploração iniciada, task_id: {spec.task_id}")
 
         try:
             from src.service.explore_workflow import ExploreWorkflow
@@ -743,7 +762,7 @@ def explore_task(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
             # }, block=True)
             time.sleep(0.1)
         finally:
-            logger.info(f"探索任务结束, task_id: {spec.task_id}")
+            logger.info(f"Tarefa de exploração encerrada, task_id: {spec.task_id}")
             release_press_key(ctx)
 
     except Exception as e:

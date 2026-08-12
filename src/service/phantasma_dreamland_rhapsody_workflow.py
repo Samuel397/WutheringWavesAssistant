@@ -102,12 +102,12 @@ def globalDispatcher(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[s
 
     # 在全局预设中找出离开函数，尝试回到主页
     if ctx.page_service.global_page_action(ui.ocr_result):
-        logger.debug("找到全局页面")
+        logger.debug("Página global encontrada")
         ui.sleep(1)
         return None
 
     # 兜底规则，esc
-    logger.info("Transferring")
+    logger.info("Transferindo")
 
     num = max(1, min(1.4, random.gauss(1.2, 0.08)))
     ui.esc().sleep(num)
@@ -120,7 +120,7 @@ def rootDispatcher(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str
         return I18nText.Guidebook
 
     if local.rootFSM.is_active:
-        logger.warning("Unexpected root state")
+        logger.warning("Estado raiz inesperado")
     return None
 
 
@@ -138,7 +138,7 @@ def doGuidebook(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str]:
         # 点击进入索拉指南
         if not ui.click_text(ctx.tr(I18nText.Guidebook),
                              bbox_terminal_content(ctx), pk=PointKind.NEAR, delay=0.2, times=2, interval=0.2):
-            logger.warning(f"Text not found: {ctx.tr(I18nText.Guidebook).raw}")
+            logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Guidebook).raw}")
             return None
     else:
         ctx.control_service.guidebook()
@@ -155,7 +155,7 @@ def doGuidebook(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str]:
     title_roi = bbox_guidebook_title(ctx)
 
     if not ui.sleep(0.5).wait().until(lambda: ui.snapshot().search(titles, title_roi)):
-        logger.warning(f"Page not found: {ctx.tr(I18nText.Guidebook).raw}")
+        logger.warning(f"Página não encontrada: {ctx.tr(I18nText.Guidebook).raw}")
         return None
 
     # 点击周度游历
@@ -170,13 +170,13 @@ def doGuidebook(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str]:
         if not ui.sleep(0.5).wait().until(
                 lambda: ui.snapshot().click_text(
                     ctx.tr(I18nText.ActivityWeekly), weekly_roi, delay=0.3, times=2, interval=0.3)):
-            logger.warning(f"Text not found: {ctx.tr(I18nText.ActivityWeekly).raw}")
+            logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.ActivityWeekly).raw}")
             return None
 
     # 点击幻梦游园·狂想
     if not ui.wait().until(lambda: ui.snapshot().click_text(
             ctx.tr(I18nText.PhantasmaDreamlandRhapsody), delay=0.2, times=2, interval=0.2)):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.PhantasmaDreamlandRhapsody).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.PhantasmaDreamlandRhapsody).raw}")
         return None
 
     # 等待游戏主页
@@ -184,7 +184,7 @@ def doGuidebook(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str]:
             lambda: ui.snapshot()
                     and ui.search(ctx.tr(I18nText.PdrDreamGallery))
                     and ui.search(ctx.tr(I18nText.PdrWeeklyActivityPts))):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.PdrDreamGallery).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.PdrDreamGallery).raw}")
         return None
 
     ui.sleep(0.5)
@@ -195,18 +195,18 @@ def __getWeeklyActivityPts(ctx: NodeContext, ui: UIOp, roi: Optional[BBox | Anch
     max_pts = 6000
     # 已达到上限
     if ui.search(ctx.tr(I18nText.PdrLimitReached), roi):
-        logger.info(f"Weekly Activity Pts: {ctx.tr(I18nText.PdrLimitReached).raw}")
+        logger.info(f"Pontos de atividade semanal: {ctx.tr(I18nText.PdrLimitReached).raw}")
         return max_pts
         # return 0  # test
     regex = rf"([0-9oO]*)/{max_pts}$"
     result = ui.search(regex, roi)
     if not result:
-        logger.warning(f"Weekly Activity Pts not found")
+        logger.warning("Pontos de atividade semanal não encontrados")
         return 0
     match = re.compile(regex, flags=re.I).search(result[0].text)
     logger.debug(f"match: {match.group(0)}")
     cur_pts = int(re.compile(r"[oO]").sub("0", match.group(1)))
-    logger.info(f"Weekly Activity Pts: {cur_pts}/{max_pts}")
+    logger.info(f"Pontos de atividade semanal: {cur_pts}/{max_pts}")
     return cur_pts
 
 
@@ -224,7 +224,7 @@ def doStart(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[bool]:
 
     # 检查游戏主页
     if not ui.search(ctx.tr(I18nText.PdrDreamGallery)) or not ui.search(ctx.tr(I18nText.PdrWeeklyActivityPts)):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.PdrDreamGallery).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.PdrDreamGallery).raw}")
         return None
 
     # 本周游历值

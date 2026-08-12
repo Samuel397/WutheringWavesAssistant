@@ -50,7 +50,9 @@ def create_paddleocr_gpu(
         # enable_mkldnn=True,
 ) -> PaddleOCR:
     if not check_paddleocr_gpu_available():
-        raise Exception("paddleocr没有配置GPU环境但开启GPU模式")
+        raise Exception(
+            "O modo GPU foi ativado, mas o ambiente do PaddleOCR não possui suporte a GPU"
+        )
     # logger.info("PaddleOCR is running on the %s", "GPU" if use_gpu else "CPU")
     ocr = PaddleOCR(
         use_angle_cls=use_angle_cls,

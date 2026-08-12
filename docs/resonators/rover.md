@@ -1,61 +1,61 @@
-# 漂泊者 (Rover) - 连招逻辑分析
+# Rover — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
-|------|------|
-| 角色名称 | 漂泊者 (Rover) |
-| 角色定位 | SubDPS（副输出） |
-| 元素属性 | 通用 |
-| 协奏类型 | 无（未实现检测） |
-| 版本 | 常驻 |
-| 源文件 | `src/core/combat/resonator/rover.py` |
-| 注册状态 | ✅ `set_resonators()` 中直接引用（非 `resonator_map`） |
+| Propriedade | Valor |
+|---|---|
+| Personagem | Rover |
+| Função | Sub-DPS |
+| Atributo | Genérico |
+| Tipo de Concerto | Nenhum (detecção não implementada) |
+| Versão | Permanente |
+| Arquivo-fonte | `src/core/combat/resonator/rover.py` |
+| Registro | ✅ Referenciado diretamente em `set_resonators()` (fora de `resonator_map`) |
 
-## 角色机制
+## Mecânica do personagem
 
-漂泊者是玩家角色，无特殊机制。`BaseRover` 是最简单的角色基类实现，没有任何技能状态检测。
+Rover é o personagem do jogador e, nesta implementação, não possui uma mecânica especial. `BaseRover` é a classe-base de personagem mais simples e não implementa nenhuma detecção de estado de habilidade.
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-`BaseRover` **不包含任何技能状态检测**，仅继承 `BaseResonator` 的基本接口。
+`BaseRover` **não contém nenhuma detecção de estado de habilidade**; ele apenas herda a interface básica de `BaseResonator`.
 
-## 连招片段
+## Trechos de combo
 
-| 方法 | 描述 | 说明 |
-|------|------|------|
-| `a4()` | 4段普攻 | 每段0.30秒间隔 |
-| `a2()` | 2段普攻 | 快速两段 |
-| `Eaa()` | E+2段普攻 | E接两段普攻 |
-| `E()` | E技能 | 单独E，等待0.50秒 |
-| `z()` | 重击 | 长按0.50秒 |
-| `Q()` | 声骸技能 | 声骸释放 |
-| `R()` | 共鸣解放 | 大招 |
-| `full_combo()` | 完整连段 | 测试用，返回 COMBO_SEQ |
+| Método | Descrição | Observação |
+|---|---|---|
+| `a4()` | 4 ataques básicos | Intervalo de 0.30 segundo entre os ataques |
+| `a2()` | 2 ataques básicos | Duas sequências rápidas |
+| `Eaa()` | E + 2 ataques básicos | Usa E e, em seguida, dois ataques básicos |
+| `E()` | Habilidade E | Usa somente E e aguarda 0.50 segundo |
+| `z()` | Ataque pesado | Mantém pressionado por 0.50 segundo |
+| `Q()` | Habilidade de Eco | Usa o Eco |
+| `R()` | Liberação de Ressonância | Usa a Liberação de Ressonância |
+| `full_combo()` | Combo completo | Destinado a testes; retorna `COMBO_SEQ` |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
-漂泊者的 `combo()` 使用固定序列，不依赖截图检测：
+O método `combo()` de Rover executa uma sequência fixa, sem depender da análise de capturas de tela:
 
 ```python
 def combo(self):
-    self.combo_action(self.a2(), True)     # 2段普攻
-    self.combo_action(self.Eaa(), True)    # E+2段普攻
-    self.combo_action(self.z(), False)     # 重击
-    self.combo_action(self.a2(), True)     # 2段普攻
-    self.combo_action(self.R(), False)     # 大招
-    self.combo_action(self.Q(), False)     # 声骸
+    self.combo_action(self.a2(), True)     # Dois ataques básicos
+    self.combo_action(self.Eaa(), True)    # E + dois ataques básicos
+    self.combo_action(self.z(), False)     # Ataque pesado
+    self.combo_action(self.a2(), True)     # Dois ataques básicos
+    self.combo_action(self.R(), False)     # Liberação de Ressonância
+    self.combo_action(self.Q(), False)     # Habilidade de Eco
 ```
 
-固定循环：a2 → Eaa → z → a2 → R → Q
+Ciclo fixo: `a2 → Eaa → z → a2 → R → Q`.
 
-## 设计特点
+## Características do projeto
 
-1. **无智能决策** - 不检测任何技能状态，按固定顺序释放
-2. **最简实现** - 作为基础参考实现，展示连招框架的使用方式
-3. **特殊注册** - 虽不在 `resonator_map` 中，但 `set_resonators()` 对漂泊者做了特殊处理，直接使用 `self.rover` 实例，**会执行自身的 combo()**
-4. **固定节奏** - 所有动作间隔统一为 0.30-0.50 秒
+1. **Sem decisão inteligente** — não verifica o estado das habilidades e executa tudo em ordem fixa.
+2. **Implementação mínima** — funciona como referência básica para o uso da estrutura de combos.
+3. **Registro especial** — embora não esteja em `resonator_map`, Rover recebe tratamento específico em `set_resonators()`, que usa diretamente a instância `self.rover`; portanto, **seu próprio `combo()` é executado**.
+4. **Ritmo fixo** — todos os intervalos de ação ficam entre 0.30 e 0.50 segundo.
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 2026-02-06*

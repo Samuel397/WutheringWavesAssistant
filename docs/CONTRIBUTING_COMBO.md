@@ -1,56 +1,56 @@
-# 连招定制开发指南
+# Guia para desenvolver combos personalizados
 
-本文档指导开发者如何为新角色开发定制连招，包括技能检测、连招设计和测试验证。
-
----
-
-## 📚 目录
-
-1. [开发前准备](#开发前准备)
-2. [Base 类开发](#base-类开发)
-3. [连招实现类开发](#连招实现类开发)
-4. [注册与测试](#注册与测试)
-5. [最佳实践](#最佳实践)
-6. [常见问题](#常见问题)
+Este documento explica como desenvolver combos personalizados para novos Ressonadores, incluindo detecção de habilidades, projeto da rotação e validação em testes.
 
 ---
 
-## 开发前准备
+## 📚 Índice
 
-### 所需工具
+1. [Preparação antes do desenvolvimento](#preparação-antes-do-desenvolvimento)
+2. [Desenvolvimento da classe base](#desenvolvimento-da-classe-base)
+3. [Desenvolvimento da classe concreta](#desenvolvimento-da-classe-concreta)
+4. [Registro e testes](#registro-e-testes)
+5. [Melhores práticas](#melhores-práticas)
+6. [Perguntas frequentes](#perguntas-frequentes)
 
-1. **截图工具** - 用于获取游戏画面
-2. **取色器** - 推荐使用 PowerToys 的取色器或类似工具
-3. **Python 开发环境** - Python 3.10-3.12
-4. **游戏环境** - 训练场或实战环境
+---
 
-### 所需知识
+## Preparação antes do desenvolvimento
 
-1. 熟悉角色的技能机制和连招循环
-2. 了解像素坐标系统（1280×720 为基准分辨率）
-3. 基础 Python 编程能力
+### Ferramentas necessárias
 
-### 文件结构
+1. **Ferramenta de captura** - usada para obter imagens da tela do jogo
+2. **Seletor de cores** - recomenda-se o seletor de cores do PowerToys ou uma ferramenta equivalente
+3. **Ambiente de desenvolvimento Python** - Python 3.10-3.12
+4. **Ambiente de jogo** - campo de treinamento ou combate real
+
+### Conhecimento necessário
+
+1. Conheça as habilidades do Ressonador e sua rotação de combos
+2. Compreenda o sistema de coordenadas de pixels (1280×720 é a resolução básica)
+3. Habilidades básicas de programação Python
+
+### Estrutura dos arquivos
 
 ```
 src/core/combat/resonator/
-├── your_character.py  # 新角色文件
+├── your_character.py  # Arquivo do novo Ressonador
 └── ...
 
 src/core/combat/
-├── combat_core.py     # 基类定义
-└── combat_system.py   # 战斗系统，需要注册
+├── combat_core.py     # Definições das classes base
+└── combat_system.py   # Sistema de combate; requer registro
 ```
 
 ---
 
-## Base 类开发
+## Desenvolvimento da classe base
 
-### 第一步：创建角色文件
+### Etapa 1: crie o arquivo do Ressonador
 
-在 `src/core/combat/resonator/` 目录下创建新文件 `your_character.py`。
+Crie `your_character.py` no diretório `src/core/combat/resonator/`.
 
-### 第二步：定义 Base 类框架
+### Etapa 2: defina a estrutura da classe base
 
 ```python
 import logging
@@ -67,52 +67,52 @@ class BaseYourCharacter(BaseResonator):
     def __init__(self, control_service: ControlService, img_service: ImgService):
         super().__init__(control_service, img_service)
 
-        # 在这里定义所有技能检测器
+        # Defina aqui todos os detectores de habilidades
 
     def __str__(self):
         return self.resonator_name().name
 
     def resonator_name(self) -> ResonatorNameEnum:
-        return ResonatorNameEnum.your_character  # 需要先在 combat_core.py 中添加枚举
+        return ResonatorNameEnum.your_character  # Adicione antes o valor em combat_core.py
 
     def char_class(self) -> list[CharClassEnum]:
-        # 返回角色定位：MainDPS / SubDPS / Support / Healer
+        # Retorna a função: MainDPS / SubDPS / Support / Healer
         return [CharClassEnum.MainDPS]
 
-    # 实现所有必需的检测方法
+    # Implemente todos os métodos de detecção obrigatórios
 ```
 
-### 第三步：获取技能图标坐标
+### Etapa 3: obtenha as coordenadas dos ícones de habilidade
 
-**操作步骤**：
+**Procedimento:**
 
-1. 在训练场进入战斗状态
-2. 截取 1280×720 分辨率的游戏画面
-3. 使用取色器获取技能图标**亮起时**的白色像素坐标
-4. 记录坐标和颜色值
+1. Entre no modo de combate no campo de treinamento
+2. Capture a tela do jogo com resolução de 1280×720
+3. Com os ícones de habilidade **acesos**, use o seletor para obter as coordenadas dos pixels brancos
+4. Registre as coordenadas e os valores das cores
 
-**关键点位**（基于 1280×720）：
+**Pontos principais** (com base em 1280×720):
 
 ```python
-# 示例坐标（需要根据实际角色调整）
+# Coordenadas de exemplo (ajuste para o Ressonador real)
 
-# 协奏能量（血条旁的彩色圈）
-# - 红圈: ColorChecker.concerto_fusion()
-# - 黄圈: ColorChecker.concerto_spectro()
-# - 蓝圈: ColorChecker.concerto_glacio()
-# - 绿圈: ColorChecker.concerto_aero()
-# - 紫圈: ColorChecker.concerto_havoc()
+# Energia de Concerto (círculo colorido junto à barra de PV)
+# - Vermelho: ColorChecker.concerto_fusion()
+# - Amarelo: ColorChecker.concerto_spectro()
+# - Azul: ColorChecker.concerto_glacio()
+# - Verde: ColorChecker.concerto_aero()
+# - Roxo: ColorChecker.concerto_havoc()
 self._concerto_energy_checker = ColorChecker.concerto_fusion()
 
-# 共鸣技能 E（右下角 E 技能图标）
+# Habilidade de Ressonância E (ícone no canto inferior direito)
 self._resonance_skill_point = [(1074, 635), (1091, 634), (1082, 658)]
-self._resonance_skill_color = [(255, 255, 255)]  # 白色 BGR
+self._resonance_skill_color = [(255, 255, 255)]  # Branco em BGR
 self._resonance_skill_checker = ColorChecker(
     self._resonance_skill_point,
     self._resonance_skill_color
 )
 
-# 声骸技能 Q（右下角 Q 技能图标）
+# Habilidade de Eco Q (ícone no canto inferior direito)
 self._echo_skill_point = [(1146, 632), (1141, 652), (1160, 656)]
 self._echo_skill_color = [(255, 255, 255)]
 self._echo_skill_checker = ColorChecker(
@@ -120,7 +120,7 @@ self._echo_skill_checker = ColorChecker(
     self._echo_skill_color
 )
 
-# 共鸣解放 R（右下角 R 技能图标）
+# Liberação de Ressonância R (ícone no canto inferior direito)
 self._resonance_liberation_point = [(1202, 657), (1219, 656)]
 self._resonance_liberation_color = [(255, 255, 255)]
 self._resonance_liberation_checker = ColorChecker(
@@ -129,12 +129,12 @@ self._resonance_liberation_checker = ColorChecker(
 )
 ```
 
-### 第四步：特殊状态检测
+### Etapa 4: detecte estados especiais
 
-如果角色有特殊机制（如能量条、变身状态、buff 状态），需要额外定义检测器：
+Se o Ressonador possuir mecânicas especiais, como barra de energia, transformação ou bônus, defina detectores adicionais:
 
 ```python
-# 示例：能量格数检测
+# Exemplo: detecção da quantidade de segmentos de energia
 self._energy1_point = [(547, 668), (548, 668), (552, 668)]
 self._energy1_color = [(107, 97, 250)]  # BGR
 self._energy1_checker = ColorChecker(
@@ -142,66 +142,66 @@ self._energy1_checker = ColorChecker(
     self._energy1_color
 )
 
-# 能量检测方法
+# Método de detecção de energia
 def energy_count(self, img: np.ndarray) -> int:
     energy_count = 0
     if self._energy1_checker.check(img):
         energy_count = 1
     if self._energy2_checker.check(img):
         energy_count = 2
-    # ... 更多能量格
-    logger.debug(f"{self.resonator_name().value}-能量: {energy_count}格")
+    # ... outros segmentos de energia
+    logger.debug(f"{self.resonator_name().value}-energia: {energy_count} segmento(s)")
     return energy_count
 ```
 
-### 第五步：实现检测方法
+### Etapa 5: implemente os métodos de detecção
 
-为每个技能实现检测方法：
+Implemente métodos de detecção para cada habilidade:
 
 ```python
 def is_resonance_skill_ready(self, img: np.ndarray) -> bool:
     is_ready = self._resonance_skill_checker.check(img)
-    logger.debug(f"{self.resonator_name().value}-共鸣技能: {is_ready}")
+    logger.debug(f"{self.resonator_name().value}-Habilidade de Ressonância: {is_ready}")
     return is_ready
 
 def is_echo_skill_ready(self, img: np.ndarray) -> bool:
     is_ready = self._echo_skill_checker.check(img)
-    logger.debug(f"{self.resonator_name().value}-声骸技能: {is_ready}")
+    logger.debug(f"{self.resonator_name().value}-Habilidade de Eco: {is_ready}")
     return is_ready
 
 def is_resonance_liberation_ready(self, img: np.ndarray) -> bool:
     is_ready = self._resonance_liberation_checker.check(img)
-    logger.debug(f"{self.resonator_name().value}-共鸣解放: {is_ready}")
+    logger.debug(f"{self.resonator_name().value}-Liberação de Ressonância: {is_ready}")
     return is_ready
 
 def is_concerto_energy_ready(self, img: np.ndarray) -> bool:
     is_ready = self._concerto_energy_checker.check(img)
-    logger.debug(f"{self.resonator_name().value}-协奏: {is_ready}")
+    logger.debug(f"{self.resonator_name().value}-Concerto: {is_ready}")
     return is_ready
 ```
 
-**注意事项**：
+**Observações:**
 
-1. **LogicEnum.OR vs AND**：
-   - `OR`（默认）：任一点匹配即返回 True，适用于简单的亮/灰状态
-   - `AND`：所有点都匹配才返回 True，适用于有多种状态变化的技能
+1. **`LogicEnum.OR` versus `AND`:**
+   - `OR` (padrão): retorna `True` se qualquer ponto corresponder; adequado à distinção simples entre ícone aceso e cinza
+   - `AND`: retorna `True` somente se todos os pontos corresponderem; adequado a habilidades com vários estados visuais
 
-2. **颜色容差**：
-   - 默认容差为 30
-   - 对于颜色变化大的技能，可调整 `tolerance` 参数
+2. **Tolerância de cor:**
+   - A tolerância padrão é 30
+   - Para habilidades com grande variação de cor, ajuste o parâmetro `tolerance`
 
 ---
 
-## 连招实现类开发
+## Desenvolvimento da classe concreta
 
-### 第一步：定义实现类框架
+### Etapa 1: defina a estrutura da classe concreta
 
 ```python
 class YourCharacter(BaseYourCharacter):
-    # COMBO_SEQ 为训练场单人静态完整连段，后续开发以此为准从中拆分截取
+    # COMBO_SEQ é o combo estático individual de referência do campo de treinamento
 
     COMBO_SEQ = [
-        # 完整连招序列（参考用）
+        # Sequência completa do combo (referência)
         ["a", 0.05, 0.30],
         ["a", 0.05, 0.30],
         # ...
@@ -210,51 +210,51 @@ class YourCharacter(BaseYourCharacter):
     def __init__(self, control_service: ControlService, img_service: ImgService):
         super().__init__(control_service, img_service)
 
-    # 定义连招片段方法
+    # Defina os métodos dos fragmentos de combo
 
     def combo(self):
-        # 连招主逻辑
+        # Lógica principal do combo
         pass
 ```
 
-### 第二步：定义动作序列格式
+### Etapa 2: definir o formato da sequência de ação
 
-每个动作为三元组 `[key, press_time, wait_time]`：
+Cada ação é uma tupla `[key, press_time, wait_time]`:
 
 ```python
-# 格式: [按键, 按下时长(秒), 等待时长(秒)]
+# Formato: [tecla, duração do pressionamento (s), espera (s)]
 
-["a", 0.05, 0.30]  # 普攻：按下0.05秒，等待0.30秒
-["E", 0.05, 1.25]  # E技能：按下0.05秒，等待1.25秒
-["z", 3.50, 0.41]  # 重击：长按3.50秒，等待0.41秒
-["R", 0.05, 2.63]  # 大招：按下0.05秒，等待2.63秒
-["Q", 0.05, 0.50]  # 声骸：按下0.05秒，等待0.50秒
-["j", 0.05, 0.30]  # 跳跃：按下0.05秒，等待0.30秒
-["d", 0.05, 0.30]  # 闪避：按下0.05秒，等待0.30秒
-["w", 0.00, 1.00]  # 前进（通常用于间隔）：等待1.00秒
+["a", 0.05, 0.30]  # Ataque básico: pressiona 0,05 s, espera 0,30 s
+["E", 0.05, 1.25]  # E: pressiona 0,05 s, espera 1,25 s
+["z", 3.50, 0.41]  # Ataque pesado: segura 3,50 s, espera 0,41 s
+["R", 0.05, 2.63]  # Liberação: pressiona 0,05 s, espera 2,63 s
+["Q", 0.05, 0.50]  # Eco: pressiona 0,05 s, espera 0,50 s
+["j", 0.05, 0.30]  # Salto: pressiona 0,05 s, espera 0,30 s
+["d", 0.05, 0.30]  # Esquiva: pressiona 0,05 s, espera 0,30 s
+["w", 0.00, 1.00]  # Avanço (usado como intervalo): espera 1,00 s
 ```
 
-**按键说明**：
+**Descrição das teclas:**
 
-| 按键 | 游戏操作 | 说明 |
+| Botão | Operação do jogo | Descrição |
 |------|----------|------|
-| `a` | 鼠标左键 | 普攻（按下时长 ≤ 0.2秒） |
-| `z` | 鼠标左键 | 重击（按下时长 ≥ 0.3秒） |
-| `E` | E键 | 共鸣技能 |
-| `R` | R键 | 共鸣解放 |
-| `Q` | Q键 | 声骸技能 |
-| `j` | 空格 | 跳跃 |
-| `d` | Shift/鼠标右键 | 闪避 |
-| `w` | W键 | 前进（通常用于间隔，press_time 填 0.00） |
-| `G` | G键 | 瞄准（枪系角色） |
+| `a` | botão esquerdo do mouse | Ataque básico (duração do pressionamento ≤ 0,2 segundos) |
+| `z` | botão esquerdo do mouse | Ataque pesado (duração do pressionamento ≥ 0,3 segundo) |
+| `E` | Tecla E | Habilidade de Ressonância |
+| `R` | Tecla R | Liberação de Ressonância |
+| `Q` | Tecla Q | Habilidade de Eco |
+| `j` | Espaço | Saltar |
+| `d` | Shift/botão direito do mouse | Esquivar |
+| `w` | Tecla W | Avançar (geralmente usada como intervalo; defina `press_time` como `0.00`) |
+| `G` | Tecla G | Mirar com Ressonadores que usam pistolas |
 
-### 第三步：设计连招片段
+### Etapa 3: projete fragmentos de combo
 
-将完整连招拆分为可复用的片段：
+Divida o combo completo em fragmentos reutilizáveis:
 
 ```python
 def a4(self):
-    """4段普攻"""
+    """Quatro ataques básicos."""
     logger.debug("a4")
     return [
         ["a", 0.05, 0.30],
@@ -264,28 +264,28 @@ def a4(self):
     ]
 
 def E(self):
-    """E技能"""
+    """Habilidade de Ressonância E."""
     logger.debug("E")
     return [
         ["E", 0.05, 1.25],
     ]
 
 def R(self):
-    """共鸣解放"""
+    """Liberação de Ressonância."""
     logger.debug("R")
     return [
         ["R", 0.05, 2.50],
     ]
 
 def Q(self):
-    """声骸技能"""
+    """Habilidade de Eco."""
     logger.debug("Q")
     return [
         ["Q", 0.05, 0.50],
     ]
 
 def a4E(self):
-    """4段普攻接E技能"""
+    """Quatro ataques básicos seguidos de E."""
     logger.debug("a4E")
     return [
         ["a", 0.05, 0.30],
@@ -296,188 +296,188 @@ def a4E(self):
     ]
 ```
 
-**连招拆分策略**：
+**Estratégia de fragmentação:**
 
-1. **基础片段**：单个技能或简单组合（如 `a4()`, `E()`, `R()`）
-2. **组合片段**：常用连招组合（如 `a4E()`, `Eza()`）
-3. **长等待拆分**：将长时间等待拆成多段短等待，提高容错性
+1. **Fragmento básico:** uma única habilidade ou combinação simples, como `a4()`, `E()` ou `R()`
+2. **Fragmento composto:** uma sequência usada com frequência, como `a4E()` ou `Eza()`
+3. **Espera fragmentada:** divida esperas longas em vários intervalos curtos para aumentar a tolerância a falhas
 
 ```python
-# 不推荐：长时间发呆
+# Não recomendado: espera longa sem entradas
 ["a", 0.05, 0.90]
 
-# 推荐：拆分成多段
+# Recomendado: dividir em vários intervalos curtos
 ["a", 0.05, 0.30],
 ["a", 0.05, 0.30],
 ["a", 0.05, 0.30],
 ```
 
-### 第四步：实现 combo() 主逻辑
+### Etapa 4: implemente a lógica principal de `combo()`
 
-`combo()` 是连招的核心方法，负责：
-1. 截图检测当前状态
-2. 根据状态决策连招路线
-3. 调用 `combo_action()` 执行动作序列
+`combo()` é o método principal do combo e tem três responsabilidades:
+1. capturar a tela e detectar o estado atual
+2. escolher uma sequência conforme esse estado
+3. chamar `combo_action()` para executar as ações
 
-**标准模板**：
+**Modelo padrão:**
 
 ```python
 def combo(self):
-    """连招主逻辑"""
+    """Lógica principal do combo."""
 
-    # 1. 截图检测所有状态
+    # 1. Captura a tela e detecta todos os estados
     img = self.img_service.screenshot()
 
     is_resonance_skill_ready = self.is_resonance_skill_ready(img)
     is_echo_skill_ready = self.is_echo_skill_ready(img)
     is_resonance_liberation_ready = self.is_resonance_liberation_ready(img)
     is_concerto_energy_ready = self.is_concerto_energy_ready(img)
-    energy_count = self.energy_count(img)  # 需要在 Base 类中覆写此方法
-    boss_hp = self.boss_hp(img)  # Boss 血量检测
+    energy_count = self.energy_count(img)  # Sobrescreva este método na classe base
+    boss_hp = self.boss_hp(img)  # Detecta os PV do BOSS
 
-    # 2. 释放声骸技能（通常优先级较低，提前释放用于合轴）
+    # 2. Ativa o Eco (prioridade normalmente baixa; uso antecipado sincroniza a rotação)
     self.combo_action(self.Q(), False)
 
-    # 3. 连招决策树（优先级从高到低）
+    # 3. Árvore de decisão do combo (da maior para a menor prioridade)
 
-    # 优先级1: 共鸣解放（大招）
+    # Prioridade 1: Liberação de Ressonância
     if is_resonance_liberation_ready:
         self.combo_action(self.R(), True)
         return
 
-    # 优先级2: 特殊状态处理
+    # Prioridade 2: tratamento de estados especiais
     if energy_count >= 4 and is_resonance_skill_ready:
         self.combo_action(self.a4E(), False)
         return
 
-    # 优先级3: E技能循环
+    # Prioridade 3: ciclo da Habilidade de Ressonância
     if is_resonance_skill_ready:
         self.combo_action(self.a4E(), False)
         return
 
-    # 优先级4: 兜底普攻
+    # Prioridade 4: ataques básicos de contingência
     self.combo_action(self.a4(), False)
 ```
 
-**关键参数说明**：
+**Descrição dos parâmetros principais:**
 
 - `combo_action(sequence, end_wait, ignore_event=False)`
-  - `sequence`: 动作序列
-  - `end_wait`: 是否等待最后一个动作的后摇
-    - `True`: 等待完整后摇（放完技能才切人）
-    - `False`: 不等待（一放就切，用于合轴）
-  - `ignore_event`: 是否忽略暂停事件（通常不用）
+  - `sequence`: sequência de ação
+  - `end_wait`: indica se deve aguardar a recuperação da última ação
+    - `True`: espera a animação terminar antes de trocar de Ressonador
+    - `False`: permite trocar logo após ativar a habilidade, para sincronizar a rotação
+  - `ignore_event`: indica se os eventos de pausa devem ser ignorados (normalmente `False`)
 
-**决策优先级建议**：
+**Prioridade de decisão recomendada:**
 
-1. **共鸣解放 (R)** - 最高优先，有大开大
-2. **特殊状态** - 角色特有机制（如椿的盛绽、安可的暴走）
-3. **共鸣技能 (E)** - 核心技能循环
-4. **声骸技能 (Q)** - 通常最后释放用于合轴
-5. **普攻连段** - 兜底选项
+1. **Liberação de Ressonância (R)** - prioridade máxima; use-a quando estiver disponível
+2. **Estado especial** - mecânica própria do Ressonador, como o florescimento de Camellya ou a fúria de Encore
+3. **Habilidade de Ressonância (E)** - núcleo da rotação
+4. **Habilidade de Eco (Q)** - normalmente usada ao final para sincronizar a rotação
+5. **Sequência de ataques básicos** - opção de contingência
 
-### 第五步：高级技巧
+### Etapa 5: técnicas avançadas
 
-#### 1. Boss 血量判断
+#### 1. Verificação dos PV do BOSS
 
-避免 Boss 击败后空输出：
+Evite continuar executando sequências longas quando o BOSS já estiver derrotado:
 
 ```python
 boss_hp = self.boss_hp(img)
 if boss_hp <= 0.01:
-    # Boss 即将击败，跳过长连招
+    # O BOSS está quase derrotado; evita um combo longo
     self.combo_action(self.a4(), False)
     return
 ```
 
-#### 2. 异常处理
+#### 2. Tratamento de exceções
 
-某些角色需要处理特殊状态（如被打断、飞出场外）：
+Alguns Ressonadores precisam tratar estados especiais, como interrupções ou deslocamentos para fora da arena:
 
 ```python
 def combo(self):
     try:
-        # 正常连招逻辑
+        # Lógica normal do combo
         img = self.img_service.screenshot()
         # ...
     except StopError as e:
-        # 被打断时的清理操作
-        self.control_service.jump()  # 例如：打断变身
+        # Limpeza quando a sequência é interrompida
+        self.control_service.jump()  # Exemplo: interromper uma transformação
         raise e
 ```
 
-#### 3. 随机选择
+#### 3. Seleção aleatória
 
-为某些技能添加随机性（如声骸技能）：
+Adicione aleatoriedade a certas habilidades (como Habilidade de Eco):
 
 ```python
 def Q(self):
-    """声骸技能 - 随机选择梦魇摩托或普通摩托"""
+    """Eco: escolhe aleatoriamente a motocicleta Pesadelo ou a comum."""
     if self.random_float() < 0.33:
-        # 33% 概率使用梦魇摩托（长按）
+        # 33% de chance de usar a motocicleta Pesadelo (pressionamento longo)
         return [
             ["Q", 4.00, 0.50],
         ]
     else:
-        # 67% 概率使用普通摩托（短按）
+        # 67% de chance de usar a motocicleta comum (toque curto)
         return [
             ["Q", 0.05, 0.50],
         ]
 ```
 
-#### 4. 入场检测
+#### 4. Detecção da entrada em campo
 
-为变奏（延奏）入场提供特殊处理：
+É possível fornecer tratamento especial ao entrar por uma Habilidade de Intro:
 
 ```python
-# 在 Base 类中定义入场状态检测器
-self._resonance_skill_incoming_color = [(173, 238, 249)]  # 黄色入场状态
+# Define na classe base o detector do estado de entrada
+self._resonance_skill_incoming_color = [(173, 238, 249)]  # Estado de entrada amarelo
 self._resonance_skill_incoming_checker = ColorChecker(
     self._resonance_skill_point,
     self._resonance_skill_incoming_color,
     tolerance=50
 )
 
-# 在 combo() 中优先检测入场状态
+# Em combo(), verifica primeiro o estado de entrada
 def combo(self):
     img = self.img_service.screenshot()
 
     is_incoming = self.is_resonance_skill_incoming_ready(img)
     if is_incoming:
-        # 入场特殊连招
+        # Combo especial de entrada
         self.combo_action(self.incoming_combo(), False)
         return
 
-    # 正常连招逻辑...
+    # Lógica normal do combo...
 ```
 
 ---
 
-## 注册与测试
+## Registro e testes
 
-### 第一步：添加角色枚举
+### Etapa 1: adicione o Ressonador ao enum
 
-在 `src/core/combat/combat_core.py` 的 `ResonatorNameEnum` 中添加角色：
+Adicione o Ressonador a `ResonatorNameEnum`, em `src/core/combat/combat_core.py`:
 
 ```python
 class ResonatorNameEnum(Enum):
-    # ...已有角色...
+    # ...Ressonadores existentes...
 
     # v3.x
-    your_character = "你的角色"  # 中文名
+    your_character = "your_character"  # Nome reconhecido pelo OCR; use o literal exigido pelo idioma do jogo
 ```
 
-### 第二步：注册到战斗系统
+### Etapa 2: registre-o no sistema de combate
 
-在 `src/core/combat/combat_system.py` 中：
+Em `src/core/combat/combat_system.py`:
 
-1. 导入角色类：
+1. Importe a classe do Ressonador:
 
 ```python
 from src.core.combat.resonator.your_character import YourCharacter
 ```
 
-2. 实例化角色：
+2. Instancie o Ressonador:
 
 ```python
 def __init__(self, ...):
@@ -485,54 +485,54 @@ def __init__(self, ...):
     self.your_character = YourCharacter(self.control_service, self.img_service)
 ```
 
-3. 注册到 `resonator_map`：
+3. Registre-o em `resonator_map`:
 
 ```python
 self.resonator_map: dict[ResonatorNameEnum, BaseResonator] = {
-    # ...已有角色...
+    # ...Ressonadores existentes...
     ResonatorNameEnum.your_character: self.your_character,
 }
 ```
 
-### 第三步：测试
+### Etapa 3: teste a implementação
 
-1. **训练场测试**：
-   - 配置编队包含新角色
-   - 启动自动战斗
-   - 观察连招是否流畅
-   - 检查日志输出的技能检测状态
+1. **Teste no campo de treinamento:**
+   - configure uma equipe que inclua o novo Ressonador
+   - inicie o combate automático
+   - observe se a execução do combo é fluida
+   - confira no log o estado detectado para cada habilidade
 
-2. **实战测试**：
-   - 在实际 BOSS 战斗中测试
-   - 验证各种状态下的连招决策
-   - 检查是否有卡顿或空输出
+2. **Teste em combate real:**
+   - teste em batalhas reais contra BOSS
+   - valide as decisões do combo sob diferentes condições
+   - procure travamentos, atrasos ou períodos sem ataque
 
-3. **调试技巧**：
-   - 查看日志中的 `logger.debug()` 输出
-   - 使用 `sleep()` 延长等待时间观察
-   - 截图检查坐标和颜色是否正确
+3. **Dicas de depuração:**
+   - acompanhe as mensagens de `logger.debug()`
+   - use `sleep()` para aumentar temporariamente os intervalos e observar o comportamento
+   - Faça uma captura de tela para verificar se as coordenadas e cores estão corretas
 
 ---
 
-## 最佳实践
+## Melhores práticas
 
-### 1. 命名规范
+### 1. Convenção de nomenclatura
 
-- **Base 类**: `Base<CharacterName>`
-- **实现类**: `<CharacterName>`
-- **检测器变量**: `_<feature>_checker`
-- **坐标变量**: `_<feature>_point`
-- **颜色变量**: `_<feature>_color`
+- **Classe base**: `Base<CharacterName>`
+- **Classe de implementação**: `<CharacterName>`
+- **Variáveis do detector**: `_<feature>_checker`
+- **Variável de coordenadas**: `_<feature>_point`
+- **Variável de cor**: `_<feature>_color`
 
-### 2. 日志规范
+### 2. Convenções de log
 
-每个检测方法都应输出日志：
+Cada método de detecção deve gerar um log:
 
 ```python
-logger.debug(f"{self.resonator_name().value}-共鸣技能: {is_ready}")
+logger.debug(f"{self.resonator_name().value}-Habilidade de Ressonância: {is_ready}")
 ```
 
-每个连招片段都应输出日志：
+Cada fragmento de combo deve gerar um log:
 
 ```python
 def a4E(self):
@@ -540,137 +540,137 @@ def a4E(self):
     return [...]
 ```
 
-### 3. 代码组织
+### 3. Organização do código
 
-建议的文件结构：
+Estrutura de arquivo recomendada:
 
 ```python
-# 1. 导入
+# 1. Imports
 import ...
 
-# 2. Base 类定义
+# 2. Definição da classe base
 class BaseYourCharacter(BaseResonator):
     def __init__(...):
-        # 2.1 协奏能量
-        # 2.2 能量条/特殊状态
-        # 2.3 共鸣技能 E
-        # 2.4 声骸技能 Q
-        # 2.5 共鸣解放 R
-        # 2.6 其他特殊检测
+        # 2.1 Energia de Concerto
+        # 2.2 Barra de energia e estados especiais
+        # 2.3 Habilidade de Ressonância E
+        # 2.4 Habilidade de Eco Q
+        # 2.5 Liberação de Ressonância R
+        # 2.6 Outros detectores especiais
 
-    # 2.7 基础方法
+    # 2.7 Métodos básicos
     def __str__(...):
     def resonator_name(...):
     def char_class(...):
 
-    # 2.8 检测方法（按技能顺序）
+    # 2.8 Métodos de detecção (na ordem das habilidades)
     def energy_count(...):
     def is_concerto_energy_ready(...):
     def is_resonance_skill_ready(...):
     # ...
 
-# 3. 实现类定义
+# 3. Definição da classe concreta
 class YourCharacter(BaseYourCharacter):
-    # 3.1 COMBO_SEQ 常量
-    # 3.2 __init__ 方法
-    # 3.3 连招片段方法（从简单到复杂）
-    # 3.4 combo() 主逻辑
+    # 3.1 Constante COMBO_SEQ
+    # 3.2 Método __init__
+    # 3.3 Fragmentos de combo (do simples ao complexo)
+    # 3.4 Lógica principal de combo()
 ```
 
-### 4. 性能优化
+### 4. Otimização de desempenho
 
-1. **减少截图次数**：一次截图检测多个状态
-2. **合理使用 return**：满足条件后立即 return，避免无效判断
-3. **拆分长等待**：提高响应速度和容错性
+1. **Reduza o número de capturas:** detecte vários estados na mesma imagem
+2. **Retorne cedo:** ao satisfazer uma condição, retorne imediatamente para evitar verificações desnecessárias
+3. **Divida esperas longas:** melhore o tempo de resposta e a tolerância a falhas
 
-### 5. 注释规范
+### 5. Convenções de comentários
 
 ```python
-# COMBO_SEQ 为训练场单人静态完整连段，后续开发以此为准从中拆分截取
+# COMBO_SEQ é o combo estático individual de referência do campo de treinamento
 COMBO_SEQ = [...]
 
 def a4E(self):
-    """4段普攻接E技能"""
+    """Quatro ataques básicos seguidos de E."""
     logger.debug("a4E")
     return [...]
 ```
 
 ---
 
-## 常见问题
+## Perguntas frequentes
 
-### Q1: 技能检测不准确怎么办？
+### P1: O que fazer se a detecção de habilidades for imprecisa?
 
-**A**: 检查以下几点：
-1. 坐标是否正确（基于 1280×720）
-2. 颜色值是否准确（使用取色器重新获取）
-3. 是否需要使用 `LogicEnum.AND` 逻辑
-4. 容差是否需要调整
+**A**: Verifique os seguintes pontos:
+1. As coordenadas estão corretas (com base em 1280×720)
+2. se as cores estão corretas (obtenha-as novamente com o seletor)
+3. se a lógica deveria usar `LogicEnum.AND`
+4. se a tolerância precisa de ajuste
 
-### Q2: 连招经常被打断怎么办？
-
-**A**:
-1. 拆分长时间等待为多段短等待
-2. 在连招片段中多次重复按键（冗余输入）
-3. 使用 `combo_action(..., False)` 允许提前切人
-
-### Q3: 如何获取准确的等待时长？
+### Q2: O que devo fazer se meu combo for interrompido com frequência?
 
 **A**:
-1. 在训练场录制完整连招视频
-2. 使用视频播放器逐帧分析
-3. 计算每个动作的前摇和后摇时间
-4. 实战中微调，拆分长等待
+1. Divida longas esperas em várias esperas curtas
+2. repita algumas teclas no fragmento do combo para criar entradas redundantes
+3. use `combo_action(..., False)` quando for seguro trocar de Ressonador antecipadamente
 
-### Q4: 如何处理角色的多种状态？
-
-**A**:
-1. 为每种状态定义独立的检测器
-2. 在 `combo()` 中按优先级检测
-3. 为每种状态设计专门的连招片段
-
-### Q5: 能量检测应该返回什么值？
+### Q3: Como obter o tempo de espera preciso?
 
 **A**:
-- 如果角色有多格能量，返回具体格数（如 0-4）
-- 如果只需判断满/空，返回 0/1
-- 在 `combo()` 中根据能量值决策连招
+1. Grave um vídeo combo completo no campo de treinamento
+2. Análise quadro a quadro usando o player de vídeo
+3. calcule o tempo de preparação e de recuperação de cada ação
+4. faça ajustes finos em combate real e fragmente esperas longas
 
-### Q6: 如何测试坐标是否正确？
-
-**A**:
-1. 在 Base 类的 `__init__` 中打印坐标
-2. 使用图像标注工具在截图上标记坐标
-3. 临时在 `combo()` 中输出检测结果
-4. 使用断点调试查看 `img` 数组的像素值
-
-### Q7: Mornye 的 combo() 现状是什么？
+### Q4: Como lidar com vários estados do Ressonador?
 
 **A**:
-Mornye（莫宁）的 `BaseMornye` 实现了完整的双模式能量检测（静质量能 `rest_mass_energy_count()` 和相对动能 `relative_momentum_count()`），但当前 `combo()` 使用与 `GenericResonator` 相同的简单随机打乱逻辑（a4 + random [Eaa, R, z] + Q），尚未利用这些检测功能。定制连招逻辑待后续开发。
+1. Defina detectores separados para cada estado
+2. verifique-os em ordem de prioridade dentro de `combo()`
+3. crie fragmentos de combo específicos para cada estado
+
+### Q5: Qual valor a detecção de energia deve retornar?
+
+**A**:
+- Se o Ressonador possuir vários segmentos de energia, retorne a quantidade exata (por exemplo, de 0 a 4)
+- Se bastar distinguir vazio de cheio, retorne 0 ou 1
+- Em `combo()`, selecione a sequência com base nesse valor
+
+### Q6: Como testar se as coordenadas estão corretas?
+
+**A**:
+1. imprima temporariamente as coordenadas no `__init__` da classe base
+2. Use a ferramenta de anotação de imagem para marcar as coordenadas na captura de tela
+3. registre temporariamente os resultados das verificações em `combo()`
+4. use breakpoints para inspecionar os pixels da matriz `img`
+
+### Q7: Qual é o estado atual de `Mornye.combo()`?
+
+**A**:
+`BaseMornye` implementa a detecção completa dos dois modos de energia: massa de repouso em `rest_mass_energy_count()` e momento relativo em `relative_momentum_count()`. No entanto, `combo()` ainda usa a mesma lógica aleatória simples de `GenericResonator` (`a4` + ordem aleatória de `[Eaa, R, z]` + `Q`) e não aproveita esses detectores. A lógica personalizada permanece pendente.
 
 ---
 
-## 附录：完整示例
+## Apêndice: Exemplo completo
 
-参考以下优秀实现：
+Consulte as seguintes implementações excelentes:
 
-- **简单角色**: `sanhua.py` - 辅助角色，逻辑简单
-- **中等复杂**: `changli.py` - 有能量格检测
-- **复杂角色**: `jinhsi.py` - 多阶段 E 技能
-- **特殊机制**: `camellya.py` - 变身状态、能量系统
-- **双形态**: `cartethyia.py` - 形态切换、复杂决策
-
----
-
-## 文档维护
-
-如果发现本文档有错误或需要补充，请：
-
-1. 在仓库提 Issue
-2. 或直接提交 Pull Request 更新本文档
+- **Ressonador simples**: `sanhua.py` - Suporte com lógica direta
+- **Complexidade média**: `changli.py` - detecção de segmentos de energia
+- **Ressonador complexo**: `jinhsi.py` - Habilidade de Ressonância em vários estágios
+- **Mecânica especial**: `camellya.py` - transformação e sistema de energia
+- **Duas formas**: `cartethyia.py` - alternância de forma e decisões complexas
 
 ---
 
-*最后更新: 2026-02-07*
-*贡献者: Claude Code Agent*
+## Manutenção de documentos
+
+Se encontrar um erro ou quiser complementar este documento:
+
+1. abra uma issue no repositório; ou
+2. envie um pull request atualizando o documento.
+
+---
+
+*Última atualização: 07/02/2026*
+*Contribuidor: Claude Code Agent*

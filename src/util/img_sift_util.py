@@ -263,7 +263,7 @@ class SIFTFeatureMatcher:
         scene_keypoints, scene_descriptors = self.extract_features(scene_image)
 
         if scene_descriptors is None:
-            logger.warning("scene descriptors is None")
+            logger.warning("Os descritores da cena são None")
 
             return None
 
@@ -294,7 +294,7 @@ class SIFTFeatureMatcher:
         logger.debug("good matches: %s", len(good_matches))
 
         if len(good_matches) < self.min_match_count:
-            logger.warning("not enough matches")
+            logger.warning("Correspondências insuficientes")
 
             return None
 
@@ -324,14 +324,14 @@ class SIFTFeatureMatcher:
         )
 
         if matrix is None:
-            logger.warning("homography failed")
+            logger.warning("Falha na homografia")
 
             return None
 
         success, inverse_matrix = cv2.invert(matrix)
 
         if success == 0:
-            logger.warning("invert homography failed")
+            logger.warning("Falha ao inverter a homografia")
             return None
 
         # =================================================

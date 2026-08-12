@@ -72,7 +72,7 @@ class ConditionalAction(BaseModel):
 
     def __call__(self) -> bool | None:
         if self.condition is None:
-            raise Exception("条件函数未设置")
+            raise Exception("A função de condição não foi definida")
         if self.condition():
             return True
         else:
@@ -83,7 +83,7 @@ class Page(BaseModel):
 
     @staticmethod
     def error_action(positions: dict[str, Position]) -> bool:
-        raise NotImplementedError("Page callback function not implemented")
+        raise NotImplementedError("Função de callback da Page não implementada")
 
     name: str = Field(None, title="页面名称")
     action: Callable[[Dict[str, Position]], bool] = Field(default=error_action, title="页面操作函数")
@@ -113,7 +113,9 @@ class Page(BaseModel):
             for excludeText in self.excludeTexts:
                 check_must = check_must or excludeText.must
             if not check_must:
-                raise Exception("至少得有一个是必需匹配文本，否则无法定位页面")
+                raise Exception(
+                    "É necessário ao menos um texto obrigatório para identificar a página"
+                )
         self._target_texts_mapping = {}
         for i in self.targetTexts:
             self._target_texts_mapping[i.name] = i
@@ -155,7 +157,7 @@ class Page(BaseModel):
                 self.matchPositions[image_match.name] = position
             else:
                 return False
-        logger.debug("当前页面：%s", self.name)
+        logger.debug("Página atual: %s", self.name)
         return True
 
     def text_match(self, text_match: TextMatch, src_img: np.ndarray, img: np.ndarray,
@@ -312,7 +314,7 @@ def match_with_index(
         if value is not None:
             return int(name[1:])
 
-    raise RuntimeError("不应该出现")  # 理论上不会触发
+    raise RuntimeError("Este estado não deveria ocorrer")  # 理论上不会触发
 
 
 class IMatch(ABC):
@@ -420,7 +422,7 @@ class RegexPage(IMatch):
 
     @staticmethod
     def error_action(positions: dict[str, Position], **kwargs) -> bool:
-        raise NotImplementedError("Page callback function not implemented")
+        raise NotImplementedError("Função de callback da Page não implementada")
 
 
 class I18nPageX:
@@ -474,7 +476,7 @@ class OcrResult:
         :return:
         """
         if not regex_str:
-            raise ValueError("Text cannot be empty")
+            raise ValueError("O texto não pode ficar vazio")
         if not self.has_results():
             return None
         found_boxes = []
@@ -560,7 +562,7 @@ class OcrQuery:
 
     def query(self, roi: BBox | None = None, resize: bool = True) -> "OcrQuery":
         if self._is_query:
-            raise Exception("OcrQuery is already query")
+            raise Exception("A consulta OcrQuery já foi executada")
         if not self.ctx.runtime.stop_event.is_set():
             raise StopError()
         self.results = self.ctx.ocr_service.query(self.img, roi=roi, resize=resize)
@@ -728,7 +730,7 @@ class UIOp:
     def click(self, x: int, y: int, *, delay: float = 0.0, times: int = 1, interval: float = 0.0):
         """点击点"""
         if times < 1 or interval < 0:
-            raise ValueError(f"Invalid value: {times} / {interval}")
+            raise ValueError(f"Valor inválido: {times} / {interval}")
         if delay > 0:
             self.sleep(delay)
         logger.debug(f"click: ({x}, {y}), {times}")
@@ -755,7 +757,7 @@ class UIOp:
         elif isinstance(point, Sequence) and len(point) >= 2:
             self.click(int(point[0]), int(point[1]), delay=delay, times=times, interval=interval)
         else:
-            raise ValueError(f"Invalid value")
+            raise ValueError("Valor inválido")
         return self
 
     def click_bbox(
@@ -769,7 +771,7 @@ class UIOp:
     ):
         """点击指定框内的点"""
         if not bbox:
-            raise ValueError(f"bbox is empty")
+            raise ValueError("bbox está vazio")
         if isinstance(bbox, Sequence):
             bbox = bbox[0]
         if isinstance(bbox, AnchorBBox):
@@ -781,7 +783,7 @@ class UIOp:
         elif pk == PointKind.RANDOM:
             point = bbox.random
         else:
-            raise ValueError("Unsupported PointKind")
+            raise ValueError("PointKind não compatível")
         self.click(point[0], point[1], delay=delay, times=times, interval=interval)
         return self
 
@@ -789,7 +791,7 @@ class UIOp:
         """根据页面中的文本key，点击key对应文本框内的点"""
         bbox = match.get(key)
         if not bbox:
-            raise ValueError(f"Invalid key: {key}")
+            raise ValueError(f"Chave inválida: {key}")
         self.click_bbox(bbox, pk=pk)
         return self
 
@@ -861,7 +863,7 @@ class UIOp:
         if close_window:
             # 卡在加载，强制关闭
             self.ctx.control_service.close_window()
-            raise Exception("等待回到主界面超时")
+            raise Exception("Tempo limite excedido ao aguardar a tela principal")
         return False
 
     # --------- 按键相关 ---------

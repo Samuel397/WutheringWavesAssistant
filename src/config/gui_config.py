@@ -17,6 +17,7 @@ class ParamConfig(BaseModel):
     autoRestartPeriod: str | None = Field(None, alias="autoRestartPeriod")
     gamePath: str | None = Field(None, alias="gamePath",
                                  description="游戏路径，不做处理默认可能是枚举值Auto，可使用get函数动态获取")
+    gameLanguage: str | None = Field(None, alias="gameLanguage")
     autoCombatBeta: bool | None = Field(None, alias="autoCombatBeta")
 
     # SoarToTheBeat
@@ -71,6 +72,7 @@ class ParamConfig(BaseModel):
         pre_data["userTemplate"] = soarToTheBeat.get("UserTemplate")
 
         pre_data["gamePath"] = data.get("Game", {}).get("GamePath")
+        pre_data["gameLanguage"] = data.get("Game", {}).get("GameLanguage")
         return pre_data
 
     @classmethod
@@ -87,7 +89,14 @@ class ParamConfig(BaseModel):
             pre_data = cls.pre_date(data)
             config = cls.model_validate(pre_data)
         else:
-            config = cls(bossName=None, bossLevel=None, autoRestartPeriod=None, gamePath=None, autoCombatBeta=None)
+            config = cls(
+                bossName=None,
+                bossLevel=None,
+                autoRestartPeriod=None,
+                gamePath=None,
+                gameLanguage=None,
+                autoCombatBeta=None,
+            )
         logger.debug(config)
         return config
 

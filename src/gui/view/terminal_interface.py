@@ -32,7 +32,7 @@ class LogListener(QThread):
             except queue.Empty:
                 continue  # 超时继续循环，及时感知运行状态
             except Exception:
-                logger.exception("日志监听线程发生未知异常，停止运行")
+                logger.exception("Erro desconhecido na thread de monitoramento do log; encerrando")
                 break
 
     def stop(self):
@@ -40,7 +40,7 @@ class LogListener(QThread):
         self.logQueue.put(None)
         self.logQueue.put(None)
         self.wait(1200)
-        logger.info("日志监听已关闭")
+        logger.info("Monitoramento do log encerrado")
 
 
 class TerminalCard(SimpleCardWidget):
@@ -119,7 +119,7 @@ class TerminalInterface(GalleryInterface):
         if self.logFIle is not None:
             self.logListener.start()
         else:
-            logger.warning("日志队列未初始化")
+            logger.warning("A fila de logs não foi inicializada")
 
         self.__initWidget()
 

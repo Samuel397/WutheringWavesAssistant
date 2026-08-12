@@ -77,7 +77,7 @@ class MessageBus:
             try:
                 handler(msg)
             except Exception:
-                logger.exception("[MessageBus] handler error")
+                logger.exception("[MessageBus] erro no manipulador")
 
 
 class ProcessBridge:
@@ -98,7 +98,7 @@ class ProcessBridge:
                 msg = self.queue.get()
                 self.bus.publish(msg)
             except Exception:
-                logger.exception("[ProcessBridge] handler error")
+                logger.exception("[ProcessBridge] erro no manipulador")
 
 
 def make_sender(queue_or_bus, source: MsgSource, task_id: str):

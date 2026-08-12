@@ -128,7 +128,7 @@ class TimeDialog(MaskDialogBase):
             self.accept()
             self.valueChanged.emit([hours, minutes, seconds])
         else:
-            logger.warning("定时重启游戏时间不可小于60秒")
+            logger.warning("O intervalo de reinicialização automática não pode ser inferior a 60 segundos")
 
     def updateStyle(self):
         """ update style sheet """
@@ -354,7 +354,7 @@ class ComboSequenceDialog(MaskDialogBase):
 
         self.titleLabel = QLabel(title, self.widget)
         self.contentLabel = QLabel(
-            "逗号分隔, e,q,r为技能, l(小写L)为向后闪避, a为普攻(默认连点0.3秒), 数字为间隔时间,a~0.5为普攻按下0.5秒,a(0.5)为连续普攻0.5秒，摩托车短按请用q~0.1",
+            self.tr("逗号分隔, e,q,r为技能, l(小写L)为向后闪避, a为普攻(默认连点0.3秒), 数字为间隔时间,a~0.5为普攻按下0.5秒,a(0.5)为连续普攻0.5秒，摩托车短按请用q~0.1"),
             self.widget)
 
         self.comboNameGroup = QHBoxLayout(self.widget)
@@ -764,7 +764,7 @@ class BossNameOptionsSettingCard(FlowExpandSettingCard):
         # for boss in BossNameEnum:
         new_boss = 2  # TODO 增加boss参数，根据版本区最新版本boss数量
         for i, boss in enumerate(reversed(list(BossNameEnum))):
-            button = CheckBox(boss.value, self.view)  # 按钮上展示枚举的value，即描述，可国际化
+            button = CheckBox(self.tr(boss.value), self.view)  # 仅翻译显示文本，枚举仍作为内部 ID
             button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             # button.setStyleSheet("background: rgba(0, 255, 0, 0.1);")
             self.buttonGroup.append(button)
@@ -811,7 +811,7 @@ class BossNameOptionsSettingCard(FlowExpandSettingCard):
         if isinstance(value, str):
             value = BossNameEnum[value]
         elif not isinstance(value, BossNameEnum):
-            raise TypeError(f"value {value} is not BossNameEnum or str")
+            raise TypeError(f"O valor {value} não é BossNameEnum nem str")
         if isChecked:
             if value not in self.choiceBosses:
                 self.choiceBosses.append(value)
@@ -1432,7 +1432,7 @@ class MacroParamSettingCard(ScrollArea):
     def showAboutFlyout(self):
         Flyout.create(
             # icon=InfoBarIcon.INFORMATION,
-            title='关于:',
+            title=self.tr('关于') + ':',
             content=self.tr(
                 '模板为人工录制，本身并不完美，因设备、网络等影响，可能存在极小的正负延迟，对不上轴ESC重跑即可，都能3S全奖励。' +
                 '作者也打不出100%，部分歌曲只有90%+，欢迎使用录制功能，将你的模板文件、结算分数、按键设置截图打包分享到群里，由群主校准后合进脚本内。\n' +
@@ -1471,7 +1471,7 @@ class DailyTaskSettingCard(ScrollArea):
         for i in range(len(self.lang)):
             self.langComboBox.addItem(self.tr("{text} - {sign}").format(
                 text=self.langDesc[i], sign=self.lang[i].value), userData=self.lang[i].value)
-            if i > 1:
+            if i > 2:
                 self.langComboBox.setItemEnabled(self.langComboBox.count() - 1, False)
         # self.gamePathHLayout = QHBoxLayout()
         # self.gamePathLabel = QLabel(self.tr("游戏路径:"), self.scrollWidget)
@@ -1501,6 +1501,7 @@ class DailyTaskSettingCard(ScrollArea):
         self.lang = [
             Language.ZH,
             Language.EN,
+            Language.PT,
             Language.ZH_TW,
             Language.JA,
             Language.KO,
@@ -1512,6 +1513,7 @@ class DailyTaskSettingCard(ScrollArea):
         self.langDesc = [
             "简体中文",
             "English",
+            "Português (Brasil)",
             "繁體中文",
             "日本語",
             "한국어",
@@ -1520,11 +1522,10 @@ class DailyTaskSettingCard(ScrollArea):
             "Deutsch",
             "ภาษาไทย",
         ]
-        # try:
-        #     self.curLang = Language(paramConfig.get(paramConfig.gameLanguage))
-        # except Exception:
-        #     self.curLang = Language.ZH
-        self.curLang = Language.ZH
+        try:
+            self.curLang = Language(paramConfig.get(paramConfig.gameLanguage))
+        except (TypeError, ValueError):
+            self.curLang = Language.PT
 
         self.i18ntr = I18nTr(self.curLang)
 
@@ -1609,6 +1610,7 @@ class DailyTaskSettingCard(ScrollArea):
         self.nightmarePurification = [
         ]
         self.tacetDiscordNest = [
+            I18nText.SouthernYuanHillsTacetDiscordNest,
             I18nText.StarblindCrashsiteTacetDiscordNest,
             I18nText.RebirthUplandsTacetDiscordNest,
             I18nText.StagnantRunTacetDiscordNest,
@@ -1670,8 +1672,11 @@ class DailyTaskSettingCard(ScrollArea):
         self.tacetDiscordNestComboBox = ComboBox(self.scrollWidget)
         self.tacetDiscordNestComboBox.addItem(self.tr("不选择"), userData=None)
         self.tacetDiscordNestComboBox.addItem(self.tr("全选"), userData="All")
-        # for i in range(len(self.tacetDiscordNest)):
-        #     self.tacetDiscordNestComboBox.addItem(self.i18ntr(self.tacetDiscordNest[i]).raw, userData=self.tacetDiscordNest[i])
+        for tacet_nest in self.tacetDiscordNest:
+            self.tacetDiscordNestComboBox.addItem(
+                self.i18ntr(tacet_nest).raw,
+                userData=tacet_nest,
+            )
 
         self.activityCheckBox = CheckBox(self.tr("活跃度:"), self.scrollWidget)
         self.activityComboBox = ComboBox(self.scrollWidget)
@@ -1704,13 +1709,13 @@ class DailyTaskSettingCard(ScrollArea):
             self.bossChallengeComboBox,
         ]
 
-    def __refreshGridLayout(self, index):
+    def __refreshGridLayout(self, language):
         from src.core.i18n import I18nText, I18nTr, Language
 
         try:
-            self.curLang = self.lang[index]
-        except Exception:
-            self.curLang = Language.ZH
+            self.curLang = language if isinstance(language, Language) else Language(language)
+        except (TypeError, ValueError):
+            self.curLang = Language.PT
 
         self.i18ntr = I18nTr(self.curLang)
 
@@ -1920,8 +1925,11 @@ class DailyTaskSettingCard(ScrollArea):
             lambda _: paramConfig.set(paramConfig.pioneerPodcast, self.pioneerPodcastComboBox.currentData()))
 
         def _onLangComboBoxChanged(index):
-            paramConfig.set(paramConfig.gameLanguage, self.langComboBox.currentData())
-            # self.__refreshGridLayout(index)
+            language = self.langComboBox.currentData()
+            if language is None:
+                return
+            paramConfig.set(paramConfig.gameLanguage, language)
+            self.__refreshGridLayout(language)
 
         self.langComboBox.currentIndexChanged.connect(_onLangComboBoxChanged)
 
@@ -1958,8 +1966,10 @@ class DailyTaskSettingCard(ScrollArea):
         self.pioneerPodcastComboBox.setCurrentIndex(
             self.pioneerPodcastComboBox.findData(paramConfig.get(paramConfig.pioneerPodcast)))
 
-        self.langComboBox.setCurrentIndex(
-            self.langComboBox.findData(paramConfig.get(paramConfig.gameLanguage)))
+        language_index = self.langComboBox.findData(paramConfig.get(paramConfig.gameLanguage))
+        if language_index < 0:
+            language_index = self.langComboBox.findData("pt")
+        self.langComboBox.setCurrentIndex(language_index)
 
 
     def onResetButtonClicked(self):
@@ -2021,7 +2031,7 @@ class DailyTaskSettingCard(ScrollArea):
     def showAboutFlyout(self):
         Flyout.create(
             # icon=InfoBarIcon.INFORMATION,
-            title='关于:',
+            title=self.tr('关于') + ':',
             content=self.tr(
                 '测试版，仅开放部分关卡。有问题及时群里反馈，最好录屏，或者截图游戏窗口和脚本日志，遮住uid。'
                 '\n使用前建议关闭微星小飞机、英伟达统计数据、Mod等，避免遮挡游戏ui影响识别'

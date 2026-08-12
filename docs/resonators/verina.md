@@ -1,89 +1,90 @@
-# 维里奈 (Verina) - 连招逻辑分析
+# Verina — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
-|------|------|
-| 角色名称 | 维里奈 (Verina) |
-| 角色定位 | Healer（治疗） |
-| 元素属性 | 衍射 (Spectro) |
-| 协奏类型 | 黄圈 (concerto_spectro) |
-| 版本 | 常驻 |
-| 源文件 | `src/core/combat/resonator/verina.py` |
+| Propriedade | Valor |
+|---|---|
+| Personagem | Verina |
+| Função | Curandeira |
+| Atributo | Fotônico (`Spectro`) |
+| Tipo de Concerto | Círculo amarelo (`concerto_spectro`) |
+| Versão | Permanente |
+| Arquivo-fonte | `src/core/combat/resonator/verina.py` |
 
-## 角色机制
+## Mecânica do personagem
 
-维里奈是经典治疗角色，核心循环简单高效：
+Verina é uma curandeira clássica com um ciclo simples e eficiente:
 
-- **aa + EQ** - 两段普攻接 E 和 Q 合轴
-- **跳 + 3a** - 消耗能量的空中普攻
-- **R** - 大招回复全队血量
+- **aa + EQ** — dois ataques básicos seguidos de E e Q na mesma rotação.
+- **salto + 3a** — ataques básicos aéreos que consomem energia.
+- **R** — restaura a vida de toda a equipe.
 
-### 能量系统
+### Sistema de energia
 
-- 4 格能量条
-- 普攻和技能积攒能量
-- 有能量时跳 + 3a 消耗能量
+- A barra possui 4 segmentos de energia.
+- Ataques básicos e habilidades acumulam energia.
+- Com energia disponível, salto + 3a consome esse recurso.
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 能量检测
+### Detecção de energia
 
-| 检测项 | 检测方式 | 说明 |
-|--------|----------|------|
-| 能量1格 | 黄色像素 `(114,241,255)` | 第1段能量 |
-| 能量2格 | 同上 | 第2段能量 |
-| 能量3格 | 同上 | 第3段能量 |
-| 能量4格 | 同上 | 第4段能量 |
+| Item detectado | Método | Observação |
+|---|---|---|
+| 1 segmento | Pixel amarelo `(114,241,255)` | Primeiro segmento de energia |
+| 2 segmentos | Igual ao anterior | Segundo segmento de energia |
+| 3 segmentos | Igual ao anterior | Terceiro segmento de energia |
+| 4 segmentos | Igual ao anterior | Quarto segmento de energia |
 
-### 技能检测
+### Detecção de habilidades
 
-| 检测项 | 图标颜色 | 逻辑 | 说明 |
-|--------|----------|------|------|
-| 共鸣技能 E | 白色 `(255,255,255)` | OR | E技能就绪 |
-| 声骸技能 Q | 白色 `(255,255,255)` | OR | 声骸就绪 |
-| 共鸣解放 R | 白色/灰白 `(253,253,253)/(219,218,215)` | OR | 大招就绪 |
+| Item detectado | Cor do ícone | Lógica | Observação |
+|---|---|---|---|
+| Habilidade de Ressonância E | Branco `(255,255,255)` | OR | E está pronto |
+| Habilidade de Eco Q | Branco `(255,255,255)` | OR | O Eco está pronto |
+| Liberação de Ressonância R | Branco/cinza-claro `(253,253,253)/(219,218,215)` | OR | R está pronto |
 
-> **注意**：代码注释中 `_concerto_energy_checker` 的注释为"红圈"但实际用的是 `concerto_spectro()`（黄圈），这是注释笔误。
+> **Observação:** o comentário de `_concerto_energy_checker` menciona um “círculo vermelho”, mas o código usa `concerto_spectro()` — o círculo amarelo do atributo Fotônico. Trata-se apenas de um erro no comentário.
 
-## 连招片段
+## Trechos de combo
 
-| 方法 | 描述 | 说明 |
-|------|------|------|
-| `a3EQ()` | 3普攻+E+Q | 核心连招，3段普攻接EQ合轴，多打一个a防EQ没CD |
-| `ja3()` | 跳+3段普攻 | 空中下落接3段普攻，拆分了长等待 |
-| `a3()` | 3段普攻 | 普攻第3-5段的简化版 |
-| `R()` | 共鸣解放 | 大招，等待2.63秒 |
-| `EQR()` | E+Q+R | E+声骸+大招全部释放 |
+| Método | Descrição | Observação |
+|---|---|---|
+| `a3EQ()` | 3 ataques básicos + E + Q | Combo principal; acrescenta um ataque para evitar inatividade quando E ou Q estiver em recarga |
+| `ja3()` | Salto + 3 ataques básicos | Executa três ataques após o salto e divide a espera longa |
+| `a3()` | 3 ataques básicos | Versão simplificada dos ataques básicos 3 a 5 |
+| `R()` | Liberação de Ressonância | Usa R e aguarda 2.63 segundos |
+| `EQR()` | E + Q + R | Usa E, o Eco e a Liberação de Ressonância |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```
-截图检测能量和大招状态
+Captura a tela e verifica a energia e o estado de R
 
-入场: a3EQ() 不管条件直接打aaEQ
-      R() 大招不易识别，直接按（即使没好也按一下）
+Entrada: a3EQ() é executado sem verificar condições
+         R() é pressionado diretamente, mesmo que ainda não esteja pronto,
+         porque sua detecção é pouco confiável
 
-1. 有能量(>0):
-   ├─ ja3() 跳接3段普攻消耗能量
+1. Há energia (>0):
+   ├─ ja3() usa salto + 3 ataques básicos para consumir energia
    └─ return
 
-2. 等待0.1秒再检测:
-   └─ 能量>1 → ja3()
+2. Aguarda 0.1 segundo e verifica novamente:
+   └─ energia >1 → ja3()
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **无条件释放** - a3EQ 和 R 不判断是否就绪直接释放，因为维里奈的技能识别不稳定
-2. **大招直接按** - 注释说明"大招不易识别，直接按"，放弃智能判断改用暴力释放
-3. **能量消耗** - 有能量就跳a消耗，不浪费能量
-4. **延迟检测** - 第一次没能量时等 0.1 秒再检测，可能是 EQ 释放后才获得能量
-5. **最简决策** - 维里奈的连招是所有定制角色中最简洁的
+1. **Uso incondicional** — `a3EQ()` e `R()` são executados sem verificar disponibilidade, pois a detecção das habilidades de Verina é instável.
+2. **R pressionado diretamente** — o código abandona a decisão inteligente para essa habilidade e tenta ativá-la mesmo quando ainda pode estar em recarga.
+3. **Consumo de energia** — sempre que há energia, o código usa ataques aéreos para não desperdiçar o recurso.
+4. **Detecção adiada** — quando a primeira leitura indica energia zero, aguarda 0.1 segundo e verifica novamente; E ou Q pode ter concedido energia nesse intervalo.
+5. **Decisão mínima** — entre as implementações personalizadas, a lógica de Verina é uma das mais concisas.
 
-## 协奏注释笔误
+## Erro no comentário sobre Concerto
 
-`BaseVerina.__init__` 中注释 `# 协奏 左下血条旁红圈`，但实际使用的是 `ColorChecker.concerto_spectro()`（衍射黄圈）。这是一个注释笔误，不影响功能。
+Em `BaseVerina.__init__`, o comentário afirma que o indicador de Concerto seria um círculo vermelho ao lado da barra de vida, mas a implementação usa `ColorChecker.concerto_spectro()`, correspondente ao círculo amarelo do atributo Fotônico. O erro é apenas documental e não altera o funcionamento.
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 2026-02-06*

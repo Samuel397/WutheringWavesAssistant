@@ -1,14 +1,14 @@
-# WWA Launcher
+# Inicializador do WWA
 
-### ico
+### Conversão do ícone
 
 https://www.icoconverter.com/
 
 ![logo](../resource/images/logo.ico)
 
-### compiling
+### Compilação
 
-x64 Native Tools Command Prompt for VS 2022
+Execute os comandos no **x64 Native Tools Command Prompt for VS 2022**:
 
 ```cmd
 rc wwa.rc

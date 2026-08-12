@@ -225,11 +225,11 @@ class ExploreWorkflow(AbstractWorkflow):
             with self.lock:
                 # 没启动就启动，已启动就停止
                 if self.combat_system is None:
-                    logger.info(f"[{self.count:03d}] XButton1 start")
+                    logger.info(f"[{self.count:03d}] XButton1 iniciado")
                     self.last_time = time.monotonic()
                     img = self.ui.grap()
                     if not self.ui.is_on_homepage(img):
-                        logger.info(f"[{self.count:03d}] Not in the overworld")
+                        logger.info(f"[{self.count:03d}] Fora do mundo aberto")
                         return True
                     team_members = [None, None, None]
                     scaler = Scaler(cur_wh=(img.shape[1], img.shape[0]))
@@ -265,9 +265,9 @@ class ExploreWorkflow(AbstractWorkflow):
                     self.combat_system = combat_system
                 else:
                     if time.monotonic() - self.last_time < self.click_cooldown:
-                        logger.info(f"[{self.count:03d}] 短期重复点击，忽略")
+                        logger.info(f"[{self.count:03d}] Clique repetido em curto intervalo; ignorando")
                         return True
-                    logger.info(f"[{self.count:03d}] XButton1 stop")
+                    logger.info(f"[{self.count:03d}] XButton1 interrompido")
                     self.count += 1
                     combat_system = self.combat_system
                     self.combat_system = None
@@ -289,11 +289,11 @@ class ExploreWorkflow(AbstractWorkflow):
                 combat_system = self.combat_system
                 self.combat_system = None
                 if combat_system is not None:
-                    logger.info(f"[{self.count:03d}] ESC stop")
+                    logger.info(f"[{self.count:03d}] ESC interrompeu a execução")
                     self.count += 1
                     combat_system.stop()
                 else:
-                    logger.info(f"[{self.count:03d}] ESC skip")
+                    logger.info(f"[{self.count:03d}] ESC ignorou a etapa")
         except KeyboardInterrupt as e:
             return False
         except StopError as e:

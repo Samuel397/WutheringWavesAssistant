@@ -6,10 +6,23 @@ from src.core.boss import BossNameEnum
 from src.core.contexts import Status, Context
 from src.core.interface import ControlService, OCRService, ODService, ImgService, WindowService, BossInfoService
 from src.core.pages import Page, Position, TextMatch, ConditionalAction
-from src.service.page_event_service import PageEventAbstractService
+from src.service.page_event_service import (
+    OCR_CONFIRM,
+    OCR_DO_NOT_SHOW_AGAIN,
+    OCR_RESTART,
+    PageEventAbstractService,
+    _ocr_exact,
+)
 from src.util import hwnd_util, img_util
 
 logger = logging.getLogger(__name__)
+
+OCR_NETWORK_TIMEOUT = rf"(?:网络请求超时|Network request timed out|"
+OCR_NETWORK_TIMEOUT += _ocr_exact(
+    "Tempo de solicitação esgotado. Falha ao conectar ao servidor. "
+    "Tente novamente mais tarde."
+)
+OCR_NETWORK_TIMEOUT += r"|Tempo limite.*(?:rede|solicitação))"
 
 
 class AutoBossServiceImpl(PageEventAbstractService):
@@ -119,11 +132,11 @@ class AutoBossServiceImpl(PageEventAbstractService):
             targetTexts=[
                 TextMatch(
                     name="更新完成，请重新启动游戏",
-                    text="更新完成，请重新启动游戏",
+                    text=r"(?:更新完成，请重新启动游戏|Update complete.*restart the game|Atualização concluída.*reinicie o jogo)",
                 ),
                 TextMatch(
                     name="退出",
-                    text="^退出$",
+                    text=_ocr_exact("退出", "Exit", "Sair"),
                 ),
             ],
             action=update_game_exit,
@@ -252,19 +265,19 @@ class AutoBossServiceImpl(PageEventAbstractService):
             :param positions:
             :return:
             """
-            result = self._ocr_service.find_text("重新挑战")
+            result = self._ocr_service.find_text(OCR_RESTART)
             if result is not None and self._need_retry():
-                logger.debug("点击重新挑战: %s", result)
+                logger.debug("Clicando em Reiniciar: %s", result)
                 self.click_position(result)
                 time.sleep(0.2)
                 # 检查体力弹窗
                 img = self._img_service.screenshot()
                 results = self._ocr_service.ocr(img)
-                result = self._ocr_service.search_text(results, "本次登录不再提示")
+                result = self._ocr_service.search_text(results, OCR_DO_NOT_SHOW_AGAIN)
                 if result:
                     self.click_position(result)
                     time.sleep(0.1)
-                result = self._ocr_service.search_text(results, "^确认$")
+                result = self._ocr_service.search_text(results, OCR_CONFIRM)
                 if result:
                     self.click_position(result)
                     time.sleep(0.1)
@@ -272,7 +285,7 @@ class AutoBossServiceImpl(PageEventAbstractService):
             position = positions.get("退出副本", None)
             if position is None:
                 return False
-            logger.debug("点击退出副本: %s", position)
+            logger.debug("Clicando em Sair do desafio: %s", position)
             self._info.in_dungeon = False
             self._control_service.click(*position.center)
             return True
@@ -282,7 +295,7 @@ class AutoBossServiceImpl(PageEventAbstractService):
             targetTexts=[
                 TextMatch(
                     name="退出副本",
-                    text="退出副本",
+                    text=_ocr_exact("退出副本", "Exit dungeon", "Leave instance", "Sair do desafio", "Sair da instância"),
                 ),
             ],
             action=exit_instance,
@@ -511,7 +524,7 @@ class AutoBossServiceImpl(PageEventAbstractService):
             targetTexts=[
                 TextMatch(
                     name="点击连接",
-                    text=r"^点击连接$",
+                    text=_ocr_exact("点击连接", "Tap to connect", "Toque para pousar em Solaris-3"),
                 ),
             ],
             action=login_action,
@@ -549,7 +562,7 @@ class AutoBossServiceImpl(PageEventAbstractService):
             targetTexts=[
                 TextMatch(
                     name="连接已断开",
-                    text="连接已断开",
+                    text=r"(?:连接已断开|Connection disconnected|Disconnected|Conexão perdida|Desconectando da internet)",
                 ),
                 # TextMatch(
                 #     name="登录超时，请重新尝试",
@@ -557,7 +570,7 @@ class AutoBossServiceImpl(PageEventAbstractService):
                 # ),
                 TextMatch(
                     name="确认",
-                    text="^确认$",
+                    text=OCR_CONFIRM,
                 ),
             ],
             action=disconnected_page_action,
@@ -569,15 +582,15 @@ class AutoBossServiceImpl(PageEventAbstractService):
             targetTexts=[
                 TextMatch(
                     name="系统提示",
-                    text="系统提示",
+                    text=r"(?:系统提示|System Notice|Aviso do sistema)",
                 ),
                 TextMatch(
                     name="网络请求超时，无法连接服务器，请稍后再尝试",
-                    text="网络请求超时",
+                    text=OCR_NETWORK_TIMEOUT,
                 ),
                 TextMatch(
                     name="确认",
-                    text="^确认$",
+                    text=OCR_CONFIRM,
                 ),
             ],
             action=confirm_page_action,
@@ -597,7 +610,7 @@ class AutoBossServiceImpl(PageEventAbstractService):
                         self._control_service.activate_window(login_hwnd)
                         time.sleep(0.1)
                         img = self._img_service.screenshot_window(login_hwnd)
-                        text_pos = self._ocr_service.find_text("^登录$", img)
+                        text_pos = self._ocr_service.find_text(_ocr_exact("登录", "Log in", "Entrar"), img)
                         if not text_pos:
                             continue
 
@@ -611,7 +624,9 @@ class AutoBossServiceImpl(PageEventAbstractService):
                             # img_util.save_img_in_temp(child_img)
                             child_ocr_result = self._ocr_service.ocr(child_img)
                             logger.debug("child_ocr_result: %s", child_ocr_result)
-                            search_result = self._ocr_service.search_text(child_ocr_result, "^登录$")
+                            search_result = self._ocr_service.search_text(
+                                child_ocr_result, _ocr_exact("登录", "Log in", "Entrar")
+                            )
                             if search_result is None:
                                 continue
                             self._control_service.click_window(child_hwnd, *search_result.center)
@@ -630,13 +645,13 @@ class AutoBossServiceImpl(PageEventAbstractService):
             # 先试官服
             login_hwnd_list = hwnd_util.get_login_hwnd_official()
             if click_login_page(login_hwnd_list):
-                logger.info("官服点击登录")
+                logger.info("Clicando em Entrar no servidor oficial")
                 time.sleep(3)
                 return True
             # 再试b服
             login_hwnd = hwnd_util.get_login_hwnd_bilibili()
             if click_login_page(login_hwnd):
-                logger.info("b服点击登录")
+                logger.info("Clicando em Entrar no servidor Bilibili")
                 return True
 
             logger.debug("未找到登录页面")
@@ -650,17 +665,17 @@ class AutoBossServiceImpl(PageEventAbstractService):
             targetTexts=[
                 TextMatch(
                     name="退出|公告|修复",
-                    text=r"^(退出|公告|修复)$",
+                    text=r"^(?:退出|公告|修复|Exit|Notice|Repair|Sair|Anúncio|Aviso|Reparar)$",
                 ),
                 TextMatch(
                     name="登入",
-                    text=r"^登入$",
+                    text=_ocr_exact("登入", "Log in", "Entrar"),
                 ),
             ],
             excludeTexts=[
                 TextMatch(
                     name="点击连接",
-                    text="点击连接",
+                    text=_ocr_exact("点击连接", "Tap to connect", "Toque para pousar em Solaris-3"),
                 ),
             ],
             action=account_login_action,

@@ -104,7 +104,7 @@ def rgb2gray(img_rgb: np.ndarray):
             return cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)  # 3通道 RGB -> 灰度
         elif img_rgb.shape[2] == 4:
             return cv2.cvtColor(img_rgb, cv2.COLOR_RGBA2GRAY)  # 4通道 RGBA -> 灰度
-    raise ValueError(f"Unsupported image format: {img_rgb.shape}")
+    raise ValueError(f"Formato de imagem não compatível: {img_rgb.shape}")
 
 
 def bgr2gray(img_bgr: np.ndarray):
@@ -114,7 +114,7 @@ def bgr2gray(img_bgr: np.ndarray):
             return cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)  # 3通道 BGR -> 灰度
         elif img_bgr.shape[2] == 4:
             return cv2.cvtColor(img_bgr, cv2.COLOR_BGRA2GRAY)  # 4通道 BGRA -> 灰度
-    raise ValueError(f"Unsupported image format: {img_bgr.shape}")
+    raise ValueError(f"Formato de imagem não compatível: {img_bgr.shape}")
 
 
 def resize(img: np.ndarray, dsize: tuple[int, int]) -> np.ndarray:
@@ -149,7 +149,7 @@ def resize_by_ratio(img: np.ndarray, ratio: float) -> np.ndarray:
     :return:
     """
     if ratio <= 0.0:
-        raise ValueError(f"ratio must be greater than zero, got {ratio}")
+        raise ValueError(f"ratio deve ser maior que zero; valor recebido: {ratio}")
     if ratio == 1.0:
         return img
     h, w = img.shape[:2]

@@ -274,7 +274,7 @@ class PageServiceImpl(AbstractPageService, GlobalPageService):
 
     def _build_Notice_SelectRevivalItem(self, bbox_map: dict[str, TextBox], ocr_result: OcrResult, **kwargs):
         # self._info.needHeal = True
-        logger.info("队伍中有角色需要复苏")
+        logger.info("Há um personagem da equipe que precisa ser revivido")
         self._control_service.esc()
         return True
 
@@ -362,16 +362,16 @@ class PageServiceImpl(AbstractPageService, GlobalPageService):
         # 先试官服
         login_hwnd_list = hwnd_util.get_login_hwnd_official()
         if click_login_page(login_hwnd_list):
-            logger.info("官服点击登录")
+            logger.info("Clicando em entrar no servidor oficial")
             time.sleep(3)
             return True
         # 再试b服
         login_hwnd = hwnd_util.get_login_hwnd_bilibili()
         if click_login_page(login_hwnd):
-            logger.info("b服点击登录")
+            logger.info("Clicando em entrar no servidor Bilibili")
             return True
 
-        logger.debug("未找到登录页面")
+        logger.debug("Página de login não encontrada")
         time.sleep(5)
         return False
 

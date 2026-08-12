@@ -1,115 +1,116 @@
-# 守岸人 (Shorekeeper) - 连招逻辑分析
+# Guardiã da Costa (Shorekeeper) — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
-|------|------|
-| 角色名称 | 守岸人 (Shorekeeper) |
-| 角色定位 | Healer（治疗） |
-| 元素属性 | 衍射 (Spectro) |
-| 协奏类型 | 黄圈 (concerto_spectro) |
-| 版本 | v1.3 |
-| 源文件 | `src/core/combat/resonator/shorekeeper.py` |
+| Propriedade | Valor |
+|---|---|
+| Personagem | Guardiã da Costa (Shorekeeper) |
+| Função | Curandeira |
+| Atributo | Fotônico (`Spectro`) |
+| Tipo de Concerto | Círculo amarelo (`concerto_spectro`) |
+| Versão | v1.3 |
+| Arquivo-fonte | `src/core/combat/resonator/shorekeeper.py` |
 
-## 角色机制
+## Mecânica do personagem
 
-守岸人拥有 **5 格能量条**和**蝴蝶变身**系统：
+A Guardiã da Costa possui uma **barra com 5 segmentos de energia** e uma **transformação em borboleta**.
 
-### 能量系统
+### Sistema de energia
 
-- 3 段普攻可积攒 3-4 格能量
-- 重击（z）可进入蝴蝶形态（消耗能量）
-- E 技能退出蝴蝶并获得额外能量
-- 蝴蝶退出后跳+普攻（ja）可清空能量
+- Três Ataques Básicos acumulam entre 3 e 4 segmentos de energia.
+- Um Ataque Pesado (`z`) pode ativar a forma de borboleta, consumindo energia.
+- A Habilidade de Ressonância E encerra a forma de borboleta e concede energia adicional.
+- Após sair da forma de borboleta, salto + Ataque Básico (`ja`) pode esvaziar a energia.
 
-### 进阶轴核心循环
+### Ciclo avançado principal
 
-1. 3 段普攻打到 3-4 格能量
-2. 重击进入蝴蝶
-3. E 退出蝴蝶（获得 5 格能量）
-4. 跳+普攻+声骸清空能量
-5. 释放大招
+1. Executar três Ataques Básicos para chegar a 3–4 segmentos de energia.
+2. Usar o Ataque Pesado para entrar na forma de borboleta.
+3. Usar E para sair dessa forma e chegar a 5 segmentos de energia.
+4. Usar salto + Ataque Básico + Eco para consumir a energia.
+5. Ativar a Liberação de Ressonância.
 
-### 蝴蝶问题
+### Risco da forma de borboleta
 
-守岸人进入蝴蝶后如果不操作会一直飞行，需要注意：
-- 多加普攻 `a` 打断蝴蝶飞行
-- Boss 击败时需要立即跳跃打断蝴蝶
+Se não receber outra ação, a Guardiã da Costa continua voando enquanto está transformada. Por isso, a implementação:
 
-## 技能状态检测
+- acrescenta um Ataque Básico `a` para interromper o voo;
+- salta imediatamente quando o chefe é derrotado, interrompendo a transformação.
 
-### 能量检测
+## Detecção do estado das habilidades
 
-| 检测项 | 检测方式 | 说明 |
-|--------|----------|------|
-| 能量1格 | 黄色像素 `(114,241,255)` | 第1段能量 |
-| 能量2格 | 同上 | 第2段能量 |
-| 能量3格 | 同上 | 第3段能量 |
-| 能量4格 | 同上 | 第4段能量 |
-| 能量5格 | 同上 | 第5段（两侧蝴蝶） |
+### Detecção de energia
 
-### 技能检测
+| Item detectado | Método | Observação |
+|---|---|---|
+| 1 segmento | Pixel amarelo `(114,241,255)` | Primeiro segmento de energia |
+| 2 segmentos | Igual ao anterior | Segundo segmento de energia |
+| 3 segmentos | Igual ao anterior | Terceiro segmento de energia |
+| 4 segmentos | Igual ao anterior | Quarto segmento de energia |
+| 5 segmentos | Igual ao anterior | Quinto segmento; borboletas nas laterais |
 
-| 检测项 | 图标颜色 | 说明 |
-|--------|----------|------|
-| 共鸣技能 E | 白色 `(255,255,255)` | E技能就绪 |
-| 声骸技能 Q | 白色 `(255,255,255)` | 声骸就绪 |
-| 共鸣解放 R | 白色 `(255,255,255)` | 大招就绪 |
+### Detecção de habilidades
 
-## 连招片段
+| Item detectado | Cor do ícone | Observação |
+|---|---|---|
+| Habilidade de Ressonância E | Branco `(255,255,255)` | E está pronto |
+| Habilidade de Eco Q | Branco `(255,255,255)` | O Eco está pronto |
+| Liberação de Ressonância R | Branco `(255,255,255)` | R está pronto |
 
-| 方法 | 描述 | 说明 |
-|------|------|------|
-| `a2()` | 2段普攻 | 快速2段 |
-| `a3()` | 3段普攻 | 3段普攻攒能量 |
-| `a3Ea()` | 3普攻+E+普攻 | E后接a防发呆 |
-| `zaEja()` | 进阶轴核心 | 重击进蝴蝶→E退出→跳+普攻清能量 |
-| `zE()` | 重击+E | 进蝴蝶+E退出 |
-| `Eja()` | E+跳+普攻 | E退出+清能量 |
-| `ja()` | 跳+普攻 | 清空能量 |
-| `za()` | 重击+普攻 | 常规重击+打断防飞 |
-| `E()` | E技能 | 仅E |
-| `Q()` | 声骸技能 | 声骸释放 |
-| `R()` | 共鸣解放 | 大招，等待3.08秒 |
+## Trechos de combo
 
-## 连招决策逻辑 (`combo()`)
+| Método | Descrição | Observação |
+|---|---|---|
+| `a2()` | 2 ataques básicos | Dois ataques rápidos |
+| `a3()` | 3 ataques básicos | Acumula energia |
+| `a3Ea()` | 3 ataques básicos + E + Ataque Básico | Acrescenta `a` após E para evitar inatividade |
+| `zaEja()` | Ciclo avançado principal | Ataque Pesado para transformar → E para sair → salto + Ataque Básico para consumir energia |
+| `zE()` | Ataque Pesado + E | Entra na forma de borboleta e sai com E |
+| `Eja()` | E + salto + Ataque Básico | Sai da transformação e consome energia |
+| `ja()` | Salto + Ataque Básico | Esvazia a energia |
+| `za()` | Ataque Pesado + Ataque Básico | Ataque Pesado comum seguido de interrupção do voo |
+| `E()` | Habilidade E | Usa somente E |
+| `Q()` | Habilidade de Eco | Usa o Eco |
+| `R()` | Liberação de Ressonância | Usa R e aguarda 3.08 segundos |
+
+## Lógica de decisão do combo (`combo()`)
 
 ```
-截图检测大招状态
+Captura a tela e verifica o estado de R
 
-入场: a3() 性价比3段普攻
+Entrada: a3() executa três Ataques Básicos de bom custo-benefício
 
-1. 有R（协星调律）:
+1. R (Modulação Astral) disponível:
    ├─ E()
-   ├─ R() (等待3.08秒)
+   ├─ R() (aguarda 3.08 segundos)
    └─ return
 
-2. 再次截图检测:
-   检查能量、E技能、R、Boss血量
+2. Captura a tela novamente:
+   verifica energia, E, R e a vida do chefe
 
-3. 能量3格 且 有E 且 Boss未击败:
-   ├─ zaEja() 进阶轴核心循环
+3. Exatamente 3 segmentos de energia, E disponível e chefe ainda vivo:
+   ├─ zaEja() executa o ciclo avançado principal
    ├─ Q()
    └─ return
 
-4. 通用处理:
-   ├─ E() (无R时等待合轴)
-   ├─ R() (有R时释放)
-   ├─ 能量5格 → ja() 清能量
+4. Tratamento geral:
+   ├─ E() (aguarda a sincronização quando R está indisponível)
+   ├─ R() (quando disponível)
+   ├─ 5 segmentos de energia → ja() consome energia
    └─ Q()
 
-异常处理:
-└─ StopError → jump() 打断蝴蝶变身防止飞出场外
+Tratamento de exceção:
+└─ StopError → jump() interrompe a transformação para evitar que a personagem voe para fora da arena
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **蝴蝶飞出防护** - `combo()` 使用 try-except 捕获 `StopError`，调用 `jump()` 打断守岸人变身蝴蝶
-2. **能量3格触发** - 进阶轴需要精确 3 格能量才执行 zaEja 循环
-3. **ja替代za** - 5 格能量时使用 `ja()` 而非 `za()`，防止按键卡掉导致蝴蝶飞出
-4. **E后接a** - 多处 E 后接额外普攻，防止 E 没好时原地发呆
-5. **大招优先** - 有 R 时优先释放（协星调律回复队友血量）
+1. **Proteção contra voo para fora da arena** — `combo()` captura `StopError` com `try-except` e chama `jump()` para interromper a transformação da Guardiã da Costa.
+2. **Ativação com 3 segmentos** — o ciclo avançado `zaEja()` exige exatamente 3 segmentos de energia.
+3. **`ja()` no lugar de `za()`** — com 5 segmentos, usa `ja()` para evitar que uma tecla presa mantenha a personagem voando.
+4. **Ataque após E** — vários trechos acrescentam um Ataque Básico depois de E para evitar inatividade quando a habilidade está em recarga.
+5. **Prioridade para R** — quando R está disponível, a execução prioriza a Modulação Astral para recuperar a vida da equipe.
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 2026-02-06*

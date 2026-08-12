@@ -273,7 +273,7 @@ def globalDispatcher(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[s
         return None
 
     # 兜底规则，esc
-    logger.info("Transferring")
+    logger.info("Transferindo")
 
     # num = round(random.uniform(1.5, 2.0), 2)
     num = max(1, min(1.4, random.gauss(1.2, 0.08)))
@@ -293,7 +293,7 @@ def rootDispatcher(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str
         return I18nText.TerminalPioneerPodcast
 
     if local.rootFSM.is_active:
-        logger.warning("Unexpected root state")
+        logger.warning("Estado raiz inesperado")
     return None
 
 
@@ -328,7 +328,7 @@ def doTravelToResonanceNexus(ctx: NodeContext, local: TaskLocal, **kwargs) -> bo
         if not ui.sleep(0.3).wait().until(
                 lambda: ui.snapshot().search(
                     ctx.tr([I18nText.Huanglong, I18nText.Mengzhou, I18nText.Jinzhou]), regions_roi)):
-            logger.warning(f"Text not found: {ctx.tr(I18nText.Huanglong).raw}")
+            logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Huanglong).raw}")
             return False
         ui.sleep(0.4).snapshot()  # 修复文字未显示完全就识别导致少字，等动画结束，重新识别
         if ui.search(ctx.tr(I18nText.Mengzhou)) or ui.search(ctx.tr(I18nText.Jinzhou)):
@@ -346,7 +346,7 @@ def doTravelToResonanceNexus(ctx: NodeContext, local: TaskLocal, **kwargs) -> bo
     if not ui.sleep(0.5).wait().until(
             lambda: ui.snapshot().click_text(
                 ctx.tr(I18nText.JinzhouCity), regions_roi, delay=0.4, times=2, interval=0.2)):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.JinzhouCity).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.JinzhouCity).raw}")
         return False
 
     # 点击今州城传送点
@@ -357,7 +357,7 @@ def doTravelToResonanceNexus(ctx: NodeContext, local: TaskLocal, **kwargs) -> bo
     feature_data = matcher.build_feature_data(tmpl_name, tmpl_img)
     result = matcher.match(scene_img, feature_data)
     if result is None:
-        logger.warning("Feature match failed")
+        logger.warning("Falha na correspondência de características")
         return False
     # (466, 309)
     point = Point(433, 187)
@@ -386,13 +386,13 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
 
     # 终端
     if not ui.match_page(I18nPage.Terminal.PAGE):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.Terminal)}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Terminal)}")
         ui.esc().sleep(1)
         return None
 
     # 点击进入编队
     if not ui.click_text(ctx.tr(I18nText.Team), bbox_terminal_content(ctx), pk=PointKind.NEAR, times=2, interval=0.2):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.Team).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Team).raw}")
         return False
 
     roi = ctx.scaler.as_bbox(AnchorBBox(
@@ -403,10 +403,10 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
             lambda: ui.snapshot().search(
                 ctx.tr([I18nText.QuickSetup, I18nText.CannotPerformThisActionDuringBattle]))):
         if ui.search(ctx.tr(I18nText.CannotPerformThisActionDuringBattle)):
-            logger.info(f"Team locked")
+            logger.info("Equipe bloqueada")
             return False
         if not ui.search(ctx.tr(I18nText.QuickSetup), roi):
-            logger.info(f"Team locked")
+            logger.info("Equipe bloqueada")
             return False
 
     # 检查失去意识
@@ -416,7 +416,7 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
     ))
     result = ui.search(ctx.tr(I18nText.ResonatorDowned), roi)
     if result:
-        logger.info(f"resonator downed: {len(result)}")
+        logger.info(f"Ressonadores derrotados: {len(result)}")
         if ui.esc().sleep(0.5).wait_back_home():
             ui.sleep(0.3)
         return False
@@ -463,7 +463,7 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
         if match.match(img):
             members_info[i][2] = True
 
-    keys = Resonator.i18n_keys()
+    keys = [key for key in Resonator.i18n_keys() if ctx.tr(key) is not None]
     lang = ctx.window_service.get_lang()
 
     for text_box in ui.bbox_result:
@@ -483,7 +483,7 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
                 # 角色名都对不上，默认为主角
                 members_info[i][0] = enum_obj.value if enum_obj else ResonatorNameEnum.rover.value
                 team_members[i] = members_info[i][0]
-            elif lang == Language.EN:
+            elif lang in {Language.EN, Language.PT}:
                 key = next((k for k in keys if ui.match_key(k, text_box.text)), None)
                 if not key:
                     key = I18nText.Rover
@@ -491,16 +491,16 @@ def doTeam(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool | None:
                 team_members[i] = members_info[i][0]
 
             else:
-                raise NotImplementedError()
+                raise NotImplementedError(f"Idioma OCR da equipe não compatível: {lang}")
             # logger.debug(f"team_members[{i}]: {team_members[i]}")
 
     # logger.debug(f"members_info: {members_info}")
-    logger.info(f"team members: {team_members}")
+    logger.info(f"Membros da equipe: {team_members}")
 
     ui.esc().sleep(1)
     if not any(team_members):  # 兜底，留一个角色，至少能动
         team_members = ["unknown", None, None]
-        logger.info(f"reset team members: {team_members}")
+        logger.info(f"Redefinindo membros da equipe: {team_members}")
     local.teamFSM.complete()
     ctx.shared.team_members = team_members
     # ctx.shared.team_members = ["今汐", "长离", "守岸人"]
@@ -521,7 +521,7 @@ def doGuidebook(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str]:
         # 点击进入索拉指南
         if not ui.click_text(ctx.tr(I18nText.Guidebook), bbox_terminal_content(ctx),
                              pk=PointKind.NEAR, delay=0.2, times=2, interval=0.2):
-            logger.warning(f"Text not found: {ctx.tr(I18nText.Guidebook).raw}")
+            logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Guidebook).raw}")
             return None
     else:
         ctx.control_service.guidebook()
@@ -553,7 +553,7 @@ def doGuidebook(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str]:
     title_roi = bbox_guidebook_title(ctx)
 
     if not ui.sleep(0.5).wait().until(lambda: ui.snapshot().search(titles, title_roi)):
-        logger.warning(f"Page not found: {ctx.tr(I18nText.Guidebook).raw}")
+        logger.warning(f"Página não encontrada: {ctx.tr(I18nText.Guidebook).raw}")
         return None
 
     # 根据任务的开启状态分发任务
@@ -567,7 +567,7 @@ def doGuidebook(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[str]:
                     if i == 0:
                         continue
                     else:
-                        logger.warning(f"materialsSpots icon not found")
+                        logger.warning("Ícone materialsSpots não encontrado")
                         return None
                 ui.click_point(icon_point, times=2, interval=0.3)
                 if ui.sleep(0.2).wait(2, 0.3).until(lambda: ui.snapshot().search(materialsSpots, title_roi)):
@@ -636,7 +636,7 @@ def doActivityDaily(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
 
     # 校验是否在活跃度页面
     if not ui.search(ctx.tr(I18nText.Activity), bbox_guidebook_title(ctx)):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.Activity).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Activity).raw}")
         return _fail_return()
 
     # 上方活跃度、周度游历标签文字
@@ -697,7 +697,7 @@ def doActivityWeekly(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[b
 
     # 校验是否在活跃度页面
     if not ui.search(ctx.tr(I18nText.Activity), bbox_guidebook_title(ctx)):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.Activity).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.Activity).raw}")
         return _fail_return()
 
     # 上方活跃度、周度游历标签文字
@@ -722,7 +722,7 @@ def doActivityWeekly(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[b
     # 点击幻梦游园·狂想
     if not ui.wait().until(lambda: ui.snapshot().click_text(
             ctx.tr(I18nText.PhantasmaDreamlandRhapsody), delay=0.2, times=2, interval=0.2)):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.PhantasmaDreamlandRhapsody).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.PhantasmaDreamlandRhapsody).raw}")
         return _fail_return()
 
     # 等待游戏主页
@@ -730,7 +730,7 @@ def doActivityWeekly(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[b
             lambda: ui.snapshot()
                     and ui.search(ctx.tr(I18nText.PdrDreamGallery))
                     and ui.search(ctx.tr(I18nText.PdrWeeklyActivityPts))):
-        logger.warning(f"Text not found: {ctx.tr(I18nText.PdrDreamGallery).raw}")
+        logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.PdrDreamGallery).raw}")
         return _fail_return()
 
     # 检查游历值
@@ -739,7 +739,7 @@ def doActivityWeekly(ctx: NodeContext, local: TaskLocal, **kwargs) -> Optional[b
         AnchorPoint(235, 200, Align.Left | Align.Top)
     ))
     if ui.sleep(0.3).snapshot().search(ctx.tr(I18nText.PdrLimitReached), pts_roi):
-        logger.info(f"Weekly Activity Pts: {ctx.tr(I18nText.PdrLimitReached).raw}")
+        logger.info(f"Pontos de atividade semanal: {ctx.tr(I18nText.PdrLimitReached).raw}")
         if res_claim:
             local.activityWeeklyFSM.complete()
             return True
@@ -773,7 +773,7 @@ def __doClaimActivityPts(ctx: NodeContext, local: TaskLocal, num_points: int, in
 
     # 检查100活跃点是否为灰色已领取
     if ColorRule().points(pts_sp[num_points - 1]).colors(grey).match(img):
-        logger.info(rf"Activity Pts >= {max_pts}")
+        logger.info(rf"Pontos de atividade >= {max_pts}")
         return True
 
     # 检查100活跃点是否为黄色待领取
@@ -783,7 +783,7 @@ def __doClaimActivityPts(ctx: NodeContext, local: TaskLocal, num_points: int, in
                 lambda: ui.snapshot().click_text(ctx.tr(I18nText.TapTheBlankAreaToClose), delay=0.3)):
             return False
         ui.sleep(0.3)
-        logger.info(rf"Activity Pts >= {max_pts}")
+        logger.info(rf"Pontos de atividade >= {max_pts}")
         return True
 
     # 遍历，找出黄色的活跃点，点击领取
@@ -809,9 +809,9 @@ def __doClaimActivityPts(ctx: NodeContext, local: TaskLocal, num_points: int, in
     cur_pts = idx * increment
     logger.debug(f"cur_pts: {cur_pts}")
     if cur_pts == max_pts:
-        logger.info(rf"Activity Pts: {cur_pts} >= {max_pts}")
+        logger.info(rf"Pontos de atividade: {cur_pts} >= {max_pts}")
     else:
-        logger.warning(rf"Activity Pts: {cur_pts}")
+        logger.warning(rf"Pontos de atividade: {cur_pts}")
 
     return True
 
@@ -967,7 +967,7 @@ def doForgeryChallenge(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
         return False
     cost = 40
     if cur_waveplate < cost:
-        logger.info(f"⏭️ skip because: waveplate &lt; {cost}")
+        logger.info(f"⏭️ Ignorando porque: Placas de Onda &lt; {cost}")
         cur_fsm.complete()
         return True
 
@@ -975,7 +975,7 @@ def doForgeryChallenge(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
     # 无实际作用，仅用于页面上设置双倍次数未用完时，发送桌面通知
     result = ui.search(ctx.tr(I18nText.DoubleDropChancesToday))
     if result and local.doubleDropForgeryChallengeFSM.status == TaskStatus.NOT_REQUIRED:
-        logger.warning("there are double drop chances today")
+        logger.warning("Há oportunidades de recompensa em dobro hoje")
     elif local.doubleDropForgeryChallengeFSM.is_active:
         if local.doubleDropForgeryChallengeFSM.status == TaskStatus.PENDING:
             local.doubleDropForgeryChallengeFSM.start()
@@ -1043,7 +1043,7 @@ def doForgeryChallenge(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
 
     # 检查副本未解锁
     if unlock:
-        logger.warning(f"Unlock instance: {ctx.tr(cur_instance).raw}")
+        logger.warning(f"Desbloqueie a instância: {ctx.tr(cur_instance).raw}")
         cur_fsm.complete()
         return True
 
@@ -1135,13 +1135,13 @@ def doForgeryChallenge(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
         if ui.search(ctx.tr(I18nText.SelectARevivalItem)):
             ui.esc().sleep(0.5)
         elif ui.search(ctx.tr(I18nText.ForgeryClaim)):
-            logger.info("Challenge Complete")
+            logger.info("Desafio concluído")
             logger.debug(f"Found text: {ctx.tr(I18nText.ForgeryClaim)}")
             ui.sleep(0.3)
         else:
             combat_system.exit_special_state(Morph.Prefer)
             ui.sleep(0.3)
-            logger.info("Challenge Complete")
+            logger.info("Desafio concluído")
 
             # 寻找领取奖励交互点
             if not object_detection(ctx, search_reward=True):
@@ -1275,7 +1275,7 @@ def doTacetSuppression(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
             return False
         cost = 60
         if cur_waveplate < cost:
-            logger.info(f"⏭️ skip because: waveplate &lt; {cost}")
+            logger.info(f"⏭️ Ignorando porque: Placas de Onda &lt; {cost}")
             cur_fsm.complete()
             return True
 
@@ -1283,7 +1283,7 @@ def doTacetSuppression(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
         # 无实际作用，仅用于页面上设置双倍次数未用完时，发送桌面通知
         result = ui.search(ctx.tr(I18nText.DoubleDropChancesToday))
         if result and local.doubleDropTacetSuppressionFSM.status == TaskStatus.NOT_REQUIRED:
-            logger.warning("there are double drop chances today")
+            logger.warning("Há oportunidades de recompensa em dobro hoje")
         elif local.doubleDropTacetSuppressionFSM.is_active:
             if local.doubleDropTacetSuppressionFSM.status == TaskStatus.PENDING:
                 local.doubleDropTacetSuppressionFSM.start()
@@ -1333,7 +1333,7 @@ def doTacetSuppression(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
 
         # 检查副本未解锁
         if unlock:
-            logger.warning(f"Unlock instance: {ctx.tr(cur_instance).raw}")
+            logger.warning(f"Desbloqueie a instância: {ctx.tr(cur_instance).raw}")
             cur_fsm.complete()
             return True
 
@@ -1427,13 +1427,13 @@ def doTacetSuppression(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
             if ui.search(ctx.tr(I18nText.SelectARevivalItem)):
                 ui.esc().sleep(0.5)
             elif ui.search(ctx.tr(I18nText.TacetFieldClaim)):
-                logger.info("Challenge Complete")
+                logger.info("Desafio concluído")
                 logger.debug(f"Found text: {ctx.tr(I18nText.TacetFieldClaim)}")
                 ui.sleep(0.3)
             else:
                 combat_system.exit_special_state(Morph.Prefer)
                 ui.sleep(0.3)
-                logger.info("Challenge Complete")
+                logger.info("Desafio concluído")
 
                 # 寻找领取奖励交互点
                 if not object_detection(ctx, search_reward=True):
@@ -1590,7 +1590,7 @@ def doWeeklyChallenge(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
         return False
     cost = 60
     if cur_waveplate < cost:
-        logger.info(f"⏭️ skip because: waveplate &lt; {cost}")
+        logger.info(f"⏭️ Ignorando porque: Placas de Onda &lt; {cost}")
         cur_fsm.complete()
         return True
 
@@ -1602,7 +1602,7 @@ def doWeeklyChallenge(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
     if remain is None or not max_remain:
         return _fail_return()
     if remain == 0:
-        logger.info(f"⏭️ skip because: remaining attempts {remain}/{max_remain}")
+        logger.info(f"⏭️ Ignorando porque restam {remain}/{max_remain} tentativas")
         cur_fsm.complete()
         return True
 
@@ -1643,7 +1643,7 @@ def doWeeklyChallenge(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
 
     # 检查副本未解锁
     if unlock:
-        logger.warning(f"Unlock instance: {ctx.tr(cur_instance).raw}")
+        logger.warning(f"Desbloqueie a instância: {ctx.tr(cur_instance).raw}")
         cur_fsm.complete()
         return True
 
@@ -1686,7 +1686,7 @@ def doWeeklyChallenge(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
         # 确认已进入副本
         if not ui.sleep(3 if i == 0 else 0.1).wait(15, 0.2).until(lambda: ui.is_on_homepage()):
             return _fail_return()
-        logger.info("已进入副本")
+        logger.info("Instância iniciada")
         if cur_instance == I18nText.SeedOfIllusoryOrigin:
             for _ in range(3):
                 ctx.control_service.dash_dodge()
@@ -1753,13 +1753,13 @@ def doWeeklyChallenge(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
             ui.esc().sleep(0.5)
         elif ui.search(notice_keywords):
             logger.debug(f"Found text: {notice_keywords}")
-            logger.info("Challenge Complete")
+            logger.info("Desafio concluído")
             ui.sleep(0.3)
         else:
             combat_system.exit_special_state(Morph.Prefer)
             ui.sleep(0.3)
 
-            logger.info("Challenge Complete")
+            logger.info("Desafio concluído")
 
             # 寻找领取奖励交互点
             if not object_detection(ctx, search_reward=True):
@@ -1788,7 +1788,7 @@ def doWeeklyChallenge(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
                 else:
                     return _fail_return()
             else:
-                logger.warning(f"Text not found: {ctx.tr(I18nText.WeeklyExit).raw}")
+                logger.warning(f"Texto não encontrado: {ctx.tr(I18nText.WeeklyExit).raw}")
             return True
 
         cost = 60
@@ -1947,7 +1947,7 @@ def doTacetDiscordNest(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
             try:
                 if cur_fsm.status == TaskStatus.PENDING and int(match.group(1)) == int(match.group(2)):
                     cur_fsm.start()
-                    logger.info(f"{cur_fsm.name}: ⏭️ skip because: {match.group(0)}")
+                    logger.info(f"{cur_fsm.name}: ⏭️ ignorando porque: {match.group(0)}")
                     cur_fsm.complete()
                     continue
             except Exception:
@@ -1975,7 +1975,7 @@ def doTacetDiscordNest(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
                     return False
             # 检查副本未解锁
             if ui.search(ctx.tr(I18nText.EnableNavigation)):
-                logger.warning(f"Unlock instance: {ctx.tr(cur_instance).raw}")
+                logger.warning(f"Desbloqueie a instância: {ctx.tr(cur_instance).raw}")
                 cur_fsm.complete()
                 return True
             # 点击快速旅行
@@ -2034,7 +2034,7 @@ def doTacetDiscordNest(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
                 scene_img = ui.img
                 result = matcher.match(scene_img, feature_data)
                 if result is None:
-                    logger.warning("Feature match failed")
+                    logger.warning("Falha na correspondência de características")
                     ui.esc().sleep(1)
                     return False
 
@@ -2049,7 +2049,7 @@ def doTacetDiscordNest(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
                     scene_img = ui.grap()
                     result = matcher.match(scene_img, feature_data)
                     if result is None:
-                        logger.warning("Feature match failed")
+                        logger.warning("Falha na correspondência de características")
                         ui.esc().sleep(1)
                         return False
                     scene_point = matcher.feature_to_scene(result, (float(point.x), float(point.y)))
@@ -2061,7 +2061,7 @@ def doTacetDiscordNest(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
                     scene_img = ui.grap()
                     result = matcher.match(scene_img, feature_data)
                     if result is None:
-                        logger.warning("Feature match failed")
+                        logger.warning("Falha na correspondência de características")
                         ui.esc().sleep(1)
                         return False
                     scene_point = matcher.feature_to_scene(result, (float(point.x), float(point.y)))
@@ -2201,7 +2201,7 @@ def doTacetDiscordNest(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
             if fsm.status != TaskStatus.PENDING:
                 continue
             if pending == 0:
-                logger.info("Marking remaining subtask as failed")
+                logger.info("Marcando as subtarefas restantes como falhas")
             pending += 1
             fsm.start()
             fsm.fail()
@@ -2241,7 +2241,7 @@ def doMail(ctx: NodeContext, local: TaskLocal, **kwargs) -> bool:
 
     claim_all = ctx.tr(I18nText.MailClaimAll)
     if not ui.sleep(0.5).wait().until(lambda: ui.snapshot().click_text(claim_all)):
-        logger.warning(f"Text not found: {claim_all.raw}")
+        logger.warning(f"Texto não encontrado: {claim_all.raw}")
         local.mailFSM.fail()
         return False
 
@@ -2448,7 +2448,7 @@ class DailyWorkflow(AbstractWorkflow):
         self.local.doubleDropTacetSuppressionFSM.set_enabled(True)
 
         if not self.local.rootFSM.is_active:
-            logger.warning('Task is not active')
+            logger.warning("A tarefa não está ativa")
 
     def __init_workflow(self):
         # TODO 事件循环？

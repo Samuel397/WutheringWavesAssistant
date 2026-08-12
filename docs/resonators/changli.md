@@ -1,101 +1,101 @@
-# 长离 (Changli) - 连招逻辑分析
+# Changli — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
+| Campo | Valor |
 |------|------|
-| 角色名称 | 长离 (Changli) |
-| 角色定位 | SubDPS（副输出） |
-| 元素属性 | 熔融 (Fusion) |
-| 协奏类型 | 红圈 (concerto_fusion) |
-| 版本 | v1.1 |
-| 源文件 | `src/core/combat/resonator/changli.py` |
+| Ressonador | Changli |
+| Função | SubDPS (DPS secundário) |
+| Atributo | Fusion |
+| Tipo de Concerto | Círculo vermelho (concerto_fusion) |
+| Versão | v1.1 |
+| Arquivo-fonte | `src/core/combat/resonator/changli.py` |
 
-## 角色机制
+## Mecânicas do Ressonador
 
-长离的核心机制是**离火**系统（4格能量条）：
+O mecanismo central de Changli é o sistema de **Enflamement**, representado por uma barra de quatro segmentos:
 
-- 普攻可以积攒离火能量
-- E技能（Ea）可以积攒离火能量，且E后接a产生一离火派生
-- 4格离火时释放重击（z）可以打出**真炎·荒火**
-- 真炎重击后接R+z可以打出大伤害
+- Ataques básicos podem acumular Enflamement.
+- A sequência E + ataque básico (`Ea`) também acumula energia e ativa o ataque derivado.
+- Com quatro segmentos, um ataque pesado (`z`) ativa **Flaming Sacrifice**.
+- Ataque pesado, R e outro ataque pesado formam uma sequência de alto dano.
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 能量检测
+### Detecção de energia
 
-| 检测项 | 检测方式 | 说明 |
+| Item detectado | Método de detecção | Descrição |
 |--------|----------|------|
-| 能量1格 | 检测血条上方第1段能量像素为红色 `(107,97,250)` | 离火1格 |
-| 能量2格 | 检测第2段能量像素 | 离火2格 |
-| 能量3格 | 检测第3段能量像素 | 离火3格 |
-| 能量4格 | 检测第4段能量像素 | 离火满（可重击） |
+| 1 segmento | O primeiro pixel acima da barra de PV é vermelho `(107,97,250)` | Um segmento de Enflamement |
+| 2 segmentos | Detecta o pixel do segundo segmento | Dois segmentos de Enflamement |
+| 3 segmentos | Detecta o pixel do terceiro segmento | Três segmentos de Enflamement |
+| 4 segmentos | Detecta o pixel do quarto segmento | Energia cheia; permite Flaming Sacrifice |
 
-### 技能检测
+### Teste de habilidade
 
-| 检测项 | 图标颜色 | 说明 |
+| Item detectado | Cor do ícone | Descrição |
 |--------|----------|------|
-| 共鸣技能 E | 白色 `(255,255,255)` | E技能就绪 |
-| 声骸技能 Q | 白色 `(255,255,255)` | 声骸就绪 |
-| 共鸣解放 R | 白色 `(255,255,255)` | 大招就绪 |
+| Habilidade de Ressonância E | branco `(255,255,255)` | Habilidade E pronta |
+| Habilidade de Eco Q | branco `(255,255,255)` | Eco pronto |
+| Liberação de Ressonância R | branco `(255,255,255)` | Liberação de Ressonância pronta |
 
-## 连招片段
+## Fragmentos de combo
 
-| 方法 | 描述 | 说明 |
+| Método | Ação | Descrição |
 |------|------|------|
-| `Ea()` | E+连续普攻 | E技能+冗余多段普攻，产生一离火 |
-| `E()` | 仅E技能 | 单独的E技能 |
-| `a2()` | 2段普攻 | 入场2段普攻 |
-| `a3()` | 后3段普攻 | 普攻第3~5段，接转圈 |
-| `a()` | 单段普攻 | 一次普攻 |
-| `z()` | 重击 | 按下0.7秒的重击 |
-| `az()` | 普攻+重击 | 一段普攻接重击 |
-| `Rz()` | R+重击 | 大招接重击 |
-| `zR()` | 重击+R | 重击接大招（穿插普攻） |
-| `Qa3()` | 声骸+3段普攻 | 梦魇摩托骑行+普攻 |
-| `Q()` | 声骸技能 | 普通摩托释放 |
-| `R()` | 共鸣解放 | 仅大招 |
+| `Ea()` | E + ataques básicos | Habilidade de Ressonância seguida de entradas redundantes de ataque para ativar o derivado |
+| `E()` | Apenas habilidade E | Habilidades E individuais |
+| `a2()` | 2 etapas de ataque básico | 2 etapas de ataque básico na entrada |
+| `a3()` | Três últimos ataques básicos | Executa do terceiro ao quinto ataque da sequência |
+| `a()` | Ataque básico de estágio único | Um ataque básico |
+| `z()` | Ataque pesado | Mantém o ataque pressionado por 0,7 segundo |
+| `az()` | Ataque básico + ataque crítico | Um período de ataque básico seguido por um ataque pesado |
+| `Rz()` | R + ataque pesado | Liberação seguida de ataque pesado |
+| `zR()` | Ataque pesado + R | Ataque pesado seguido da Liberação, com ataque básico intercalado |
+| `Qa3()` | Eco + três ataques básicos | Ativa o Eco de motocicleta e continua atacando |
+| `Q()` | Habilidade de Eco | Ativa o Eco de motocicleta |
+| `R()` | Liberação de Ressonância | Apenas Liberação de Ressonância |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```
-入场: sleep(0.1) + a2() 打两个普攻（触发心眼冲）
-截图检测能量和技能状态
+Entrada em campo: sleep(0.1) + a2() executa dois ataques básicos (ativa True Sight: Charge)
+Captura a tela e detecta o estado da energia e das habilidades
 
-1. 4格离火:
-   ├─ z() 重击
-   ├─ a2() 等待后摇
-   ├─ 再次确认4格 → 再 z()
-   │   ├─ 消耗成功(非4格) → Rz() 大招重击
-   │   └─ 仍为4格 → 重击失败，不做操作直接 return
-   └─ 非4格 → E()
+1. Quatro segmentos de Enflamement:
+   ├─ z() executa um ataque pesado
+   ├─ a2() aguarda o fim da animação
+   ├─ Confirma novamente os quatro segmentos → executa z() outra vez
+   │   ├─ Consumo concluído (menos de quatro segmentos) → Rz(), com Liberação e ataque pesado
+   │   └─ Ainda há quatro segmentos → o ataque pesado falhou; não executa outra ação e retorna imediatamente
+   └─ Se não houver quatro segmentos → E()
    └─ return
 
-2. 3格离火 且 有E:
-   ├─ Ea() 打满4格
-   ├─ 检测: 4格 → z() 重击
-   │   └─ 有R → Rz()
-   ├─ 非4格但有R → Rz()
+2. Três segmentos de Enflamement e E disponível:
+   ├─ Ea() completa o quarto segmento
+   ├─ Detecta quatro segmentos → z() executa um ataque pesado
+   │   └─ Com R → Rz()
+   ├─ Sem quatro segmentos, mas com R → Rz()
    └─ return
 
-3. 低离火(<3格) 且 有R:
-   └─ Rz() 直接开大+重击
+3. Pouco Enflamement (< 3 segmentos) e R disponível:
+   └─ Rz() ativa diretamente a Liberação e o ataque pesado
    └─ return
 
-4. 兜底:
-   ├─ 有E → E() 合轴
-   ├─ 无E → a3() 普攻 + 检查4格重击
-   ├─ 声骸最后放 → Q()
+4. Contingência:
+   ├─ Com E → E() para sincronizar a rotação
+   ├─ Sem E → a3() executa ataques básicos e verifica se há quatro segmentos para o ataque pesado
+   ├─ Ativa o Eco por último → Q()
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **离火能量管理** - 核心目标是攒满4格离火后释放重击
-2. **双重确认** - 重击后会再次检查离火数，防止空中重击变成下落攻击
-3. **入场a2** - 入场先打两段普攻触发心眼冲，增加离火效率
-4. **声骸最后放** - 声骸技能放在最后用于合轴，而非最先释放
-5. **E优先级** - 3格离火时优先用E填满，低离火有R时直接开大
+1. **Gerenciamento de Enflamement** - o objetivo principal é usar um ataque pesado depois de preencher os quatro segmentos
+2. **Verificação dupla** - após o ataque pesado, confere a energia novamente para evitar que um ataque aéreo seja interpretado como ataque descendente
+3. **Entrada com `a2()`** - dois ataques básicos ativam a sequência de entrada e aceleram o ganho de energia
+4. **Eco por último** - a Habilidade de Eco fica no fim para sincronizar a rotação
+5. **Prioridade de E** - com três segmentos, E recebe prioridade para completar a barra; com pouca energia e R disponível, usa a Liberação diretamente
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 06/02/2026*

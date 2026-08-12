@@ -1,160 +1,160 @@
-# 卡提希娅 (Cartethyia) - 连招逻辑分析
+# Cartethyia — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
+| Campo | Valor |
 |------|------|
-| 角色名称 | 卡提希娅 (Cartethyia) |
-| 角色定位 | MainDPS（主输出） |
-| 元素属性 | 气动 (Aero) |
-| 协奏类型 | 绿圈 (concerto_aero) |
-| 版本 | v2.4 |
-| 源文件 | `src/core/combat/resonator/cartethyia.py` |
+| Ressonador | Cartethyia |
+| Função | MainDPS (DPS principal) |
+| Atributo | Aero |
+| Tipo de Concerto | Círculo verde (concerto_aero) |
+| Versão | v2.4 |
+| Arquivo-fonte | `src/core/combat/resonator/cartethyia.py` |
 
-## 角色机制
+## Mecânicas do Ressonador
 
-卡提希娅拥有独特的**双形态**系统：
+Cartethyia possui um sistema exclusivo de **duas formas**:
 
-- **小卡（卡提希娅本体）** - 常态形态，召唤三把剑
-- **大卡（芙露德莉斯）** - 变身形态，通过 R 变身
+- **Cartethyia** - forma normal, capaz de invocar três espadas
+- **Fleurdelys** - forma transformada, ativada por R
 
-### 三剑系统
+### Sistema de Três Espadas
 
-小卡可以召唤三把剑，收剑时产生伤害：
-- **异权剑（剑一）** - 通过重击召唤
-- **神权剑（剑二）** - 通过普攻第四段召唤
-- **人权剑（剑三）** - 通过E技能召唤
+Cartethyia pode invocar três espadas, que causam dano ao serem recolhidas:
+- **Espada da Autoridade Divergente (Espada 1)** - invocada por ataque pesado
+- **Espada da Divindade (Espada 2)** - invocada pelo quarto ataque básico
+- **Espada da Humanidade (Espada 3)** - invocada pela Habilidade de Ressonância
 
-### 形态切换
+### Troca de forma
 
-- **小卡→大卡**: R（听骑士从心祈愿）进入芙露德莉斯形态
-- **大卡→化身小卡**: R（化身·芙露德莉斯→化身·卡提希娅）
-- **化身小卡→大卡**: R（化身·卡提希娅→芙露德莉斯）
+- **Cartethyia → Fleurdelys:** R entra na forma Fleurdelys
+- **Fleurdelys → Avatar de Cartethyia:** R assume o avatar de Cartethyia
+- **Avatar de Cartethyia → Fleurdelys:** R retorna à forma Fleurdelys
 
-### 风蚀效应
+### Efeito de Erosão Aero
 
-- 持续16秒，超时清空
-- 普攻第四段叠一层
-- E技能叠两层
-- 变奏叠两层
+- Dura 16 segundos e expira ao fim desse período
+- O quarto ataque básico aplica uma carga
+- A Habilidade de Ressonância aplica duas cargas
+- A Habilidade de Intro aplica duas cargas
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 小卡技能
+### Habilidades de Cartethyia
 
-| 检测项 | 逻辑 | 说明 |
+| Item detectado | Lógica | Descrição |
 |--------|------|------|
-| 共鸣技能 - 小卡E | AND | 卡提希娅的E技能 |
-| 声骸技能 | OR | 声骸就绪 |
-| 共鸣解放 R | AND | 听骑士从心祈愿 |
+| Habilidade de Ressonância de Cartethyia | AND | Habilidade E de Cartethyia |
+| Habilidade de Eco | OR | Eco pronto |
+| Liberação de Ressonância R | AND | Ouça as orações do cavaleiro de coração |
 
-### 大卡技能
+### Habilidades de Fleurdelys
 
-| 检测项 | 逻辑 | 说明 |
+| Item detectado | Lógica | Descrição |
 |--------|------|------|
-| 共鸣技能 E1 - 芙露德莉斯 | AND | 此剑为潮浪之意 |
-| 共鸣技能 E2 - 芙露德莉斯 | AND | 凭风斩浪破敌 |
-| 化身·芙露德莉斯 | AND | R图标显示大卡形态 |
-| 化身·卡提希娅 | AND | R图标显示小卡形态 |
-| 看潮怒风哮之刃 | AND | 大卡大招可释放 |
+| Habilidade de Ressonância E1 - Frudelis | AND | Esta espada significa maré |
+| Habilidade de Ressonância E2 - Frudelis | AND | Use o vento para cortar as ondas e derrotar o inimigo |
+| Avatar de Fleurdelys | AND | O ícone de R indica a forma Fleurdelys |
+| Avatar de Cartethyia | AND | O ícone de R indica a forma Cartethyia |
+| Lâmina da Maré Uivante | AND | A Liberação de Fleurdelys está disponível |
 
-### 状态识别
+### Reconhecimento de status
 
-| 检测项 | 逻辑 | 说明 |
+| Item detectado | Lógica | Descrição |
 |--------|------|------|
-| 异权剑（剑一） | AND | 重击剑是否存在 |
-| 神权剑（剑二） | OR | 普攻剑是否存在 |
-| 人权剑（剑三） | OR | E技能剑是否存在 |
-| 显化 | AND | 大卡显化状态 |
-| 决意 | OR | 大卡血条上方能量条 |
+| Espada da Autoridade Divergente (Espada 1) | AND | Detecta a espada invocada pelo ataque pesado |
+| Espada da Divindade (Espada 2) | OR | Detecta a espada invocada pelo ataque básico |
+| Espada da Humanidade (Espada 3) | OR | Detecta a espada invocada por E |
+| Manifestação | AND | Detecta o estado manifestado de Fleurdelys |
+| Determinação | OR | Detecta a barra de energia de Fleurdelys |
 
-### 运行时动态变量
+### Variáveis dinâmicas de tempo de execução
 
 ```python
-is_avatar_cartethyia_attack_done = False  # 化身·小卡是否已打过一套攻击
+is_avatar_cartethyia_attack_done = False  # Indica se o Avatar de Cartethyia já concluiu uma sequência de ataques
 ```
 
-## 连招片段
+## Fragmentos de combo
 
-### 小卡片段
+### Fragmentos de Cartethyia
 
-| 方法 | 描述 |
+| Método | Descrição |
 |------|------|
-| `cartethyia_a4()` | 小卡4段普攻，召唤神权剑 |
-| `cartethyia_a2_start()` | 普攻前两下 |
-| `cartethyia_a2_end()` | 普攻后两下 |
-| `cartethyia_a4Eza()` | 4段普攻+E+重击+普攻 |
-| `cartethyia_Ea()` | E+普攻，召唤人权剑 |
-| `cartethyia_Eza()` | E+重击+普攻 |
-| `cartethyia_E()` | 仅E技能 |
-| `cartethyia_z()` | 重击，召唤异权剑 |
-| `cartethyia_ja()` | 下落攻击收剑 |
-| `cartethyia_R()` | 小卡R变身大卡 |
+| `cartethyia_a4()` | Quatro ataques básicos; invoca a Espada da Divindade |
+| `cartethyia_a2_start()` | Os dois primeiros ataques |
+| `cartethyia_a2_end()` | Dois golpes após ataque básico |
+| `cartethyia_a4Eza()` | 4 etapas de ataque básico + E + ataque pesado + ataque básico |
+| `cartethyia_Ea()` | E + ataque básico; invoca a Espada da Humanidade |
+| `cartethyia_Eza()` | E+ataque crítico+ataque básico |
+| `cartethyia_E()` | Apenas habilidade E |
+| `cartethyia_z()` | Ataque pesado; invoca a Espada da Autoridade Divergente |
+| `cartethyia_ja()` | Ataque caindo, espada embainhada |
+| `cartethyia_R()` | R transforma Cartethyia em Fleurdelys |
 
-### 大卡片段
+### Fragmentos de Fleurdelys
 
-| 方法 | 描述 |
+| Método | Descrição |
 |------|------|
-| `fleurdelys_a5()` | 大卡5段普攻 |
-| `fleurdelys_a2()` | 大卡前2段普攻 |
-| `fleurdelys_EaaEaaa()` | 大卡双E连招 |
-| `fleurdelys_EaaE()` | 大卡E+普攻+E |
-| `fleurdelys_za_a3()` | 大卡重击派生射箭+起飞+空中2a |
-| `fleurdelys_ja2()` | 大卡空中2段普攻 |
-| `fleurdelys_ja3()` | 大卡空中3段普攻 |
-| `fleurdelys_R_blade_of_howling_squall()` | 大卡大招：看潮怒风哮之刃 |
+| `fleurdelys_a5()` | Cinco ataques básicos de Fleurdelys |
+| `fleurdelys_a2()` | Os dois primeiros ataques básicos de Fleurdelys |
+| `fleurdelys_EaaEaaa()` | Sequência dupla de E de Fleurdelys |
+| `fleurdelys_EaaE()` | E + ataques básicos + E |
+| `fleurdelys_za_a3()` | Ataque pesado, disparo, decolagem e ataques aéreos |
+| `fleurdelys_ja2()` | Dois ataques básicos aéreos |
+| `fleurdelys_ja3()` | Três ataques básicos aéreos |
+| `fleurdelys_R_blade_of_howling_squall()` | Liberação de Fleurdelys: Lâmina da Maré Uivante |
 
-### 形态切换
+### Troca de forma
 
-| 方法 | 描述 |
+| Método | Descrição |
 |------|------|
-| `avatar_cartethyia_to_fleurdelys_Ra3()` | 化身小卡切大卡+普攻 |
-| `fleurdelys_to_avatar_cartethyia_Ra3()` | 大卡切化身小卡+普攻 |
+| `avatar_cartethyia_to_fleurdelys_Ra3()` | Avatar de Cartethyia → Fleurdelys + ataques básicos |
+| `fleurdelys_to_avatar_cartethyia_Ra3()` | Fleurdelys → Avatar de Cartethyia + ataques básicos |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```
-入场: a3() 打几下普攻
+Entrada em campo: a3() executa alguns ataques básicos
 
-截图检测所有技能和状态
+Captura a tela e detecta todas as habilidades e formas
 
-1. 化身·芙露德莉斯大招就绪（看潮怒风哮之刃）:
-   ├─ 释放大招 fleurdelys_R_blade_of_howling_squall()
-   ├─ 检查boss血量
-   └─ 若小卡E就绪 → Q + cartethyia_a4() + cartethyia_Eza()
+1. A Liberação do Avatar de Fleurdelys está pronta (detectada pela Lâmina da Maré Uivante):
+   ├─ Ativa a Liberação com fleurdelys_R_blade_of_howling_squall()
+   ├─ Verifica os PV do BOSS
+   └─ Se o E de Cartethyia estiver pronto → Q + cartethyia_a4() + cartethyia_Eza()
    └─ return
 
-2. 释放声骸 Q
+2. Ativa o Eco com Q
 
-3. 化身·卡提希娅状态:
-   ├─ 有E → cartethyia_a4() + cartethyia_Eza()
-   ├─ 无E → cartethyia_a4()
-   ├─ 首次攻击 → 标记完成，等待合轴
-   └─ 非首次 → 标记需要切换形态
+3. Estado do Avatar de Cartethyia:
+   ├─ Com E → cartethyia_a4() + cartethyia_Eza()
+   ├─ Sem E → cartethyia_a4()
+   ├─ Primeiro ataque → marca a sequência como concluída e aguarda a sincronização da rotação
+   └─ Ataques seguintes → marca que é necessário trocar de forma
 
-4. 化身·芙露德莉斯 或 需要切换:
-   ├─ 需要切换 → avatar_to_fleurdelys_Ra3() 或 R()
+4. Avatar de Fleurdelys ou troca necessária:
+   ├─ Se for necessário trocar → avatar_to_fleurdelys_Ra3() ou R()
    │   └─ fleurdelys_EaaE()
-   ├─ 有E → fleurdelys_EaaE()
-   ├─ 无E → fleurdelys_ja3()
-   └─ 检查大招 → 有则释放 + 小卡E/三剑补充
+   ├─ Com E → fleurdelys_EaaE()
+   ├─ Sem E → fleurdelys_ja3()
+   └─ Verifica a Liberação → se estiver pronta, ativa-a e complementa com o E de Cartethyia ou com as três espadas
 
-5. 常态小卡（有E或R）:
-   ├─ 有R → 补满三剑（a4+Eza+z+ja）
-   ├─ 无R → 打普攻连 + 检查E
-   ├─ 检查R → 有R则 cartethyia_R() 变身
-   └─ 大卡出场 → fleurdelys_EaaE() 或 fleurdelys_ja3()
+5. Cartethyia na forma normal (com E ou R):
+   ├─ Com R → completa as três espadas (a4+Eza+z+ja)
+   ├─ Sem R → executa a sequência de ataques básicos e verifica E
+   ├─ Verifica R → se estiver pronto, cartethyia_R() transforma a personagem
+   └─ Quando Fleurdelys entra → fleurdelys_EaaE() ou fleurdelys_ja3()
 
-6. 兜底 → cartethyia_a4()
+6. Contingência → cartethyia_a4()
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **双形态动态切换** - 程序需要追踪当前是小卡还是大卡状态
-2. **三剑收集** - 需要检测三把剑的存在状态，有大招时优先补满三剑
-3. **运行时状态变量** - `is_avatar_cartethyia_attack_done` 跟踪化身小卡的攻击状态
-4. **Boss 血量判断** - 多处检查 Boss 血量 ≤ 0.01 提前结束，避免空输出
+1. **Troca dinâmica de forma** - o sistema acompanha se o estado atual é Cartethyia, Fleurdelys ou o avatar
+2. **Coleta das três espadas** - detecta quais espadas existem e prioriza completar o conjunto antes da Liberação
+3. **Estado em tempo de execução** - `is_avatar_cartethyia_attack_done` acompanha se o ataque do avatar foi concluído
+4. **Verificação dos PV do BOSS** - encerra cedo quando os PV ficam em ≤ 0,01, evitando ataques desnecessários
 
 ---
 
-*最后更新: 2026-02-07*
+*Última atualização: 07/02/2026*

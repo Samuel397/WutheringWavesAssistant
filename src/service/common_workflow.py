@@ -207,7 +207,7 @@ def absorb_and_claim_rewards(ctx: NodeContext) -> bool:
                 0
             )
             for _ in range(absorb_index):
-                logger.info("向下滚动")
+                logger.info("Rolando para baixo")
                 ctx.control_service.scroll_mouse(-1)
                 time.sleep(0.5)
 
@@ -216,13 +216,13 @@ def absorb_and_claim_rewards(ctx: NodeContext) -> bool:
         time.sleep(2)
 
         if ui.snapshot().search(ctx.tr([I18nText.Confirm, I18nText.CollectSupplies])):
-            logger.info("点击到领取奖励，关闭页面")
+            logger.info("A opção de resgatar recompensa foi acionada; fechando a página")
             ctx.control_service.esc()
             time.sleep(2)
 
     if count == 0:
         return False
-    logger.info("吸收声骸")
+    logger.info("Absorvendo Eco")
 
     return True
 
@@ -304,7 +304,7 @@ def _query_waveplate(ctx: NodeContext, waveplate_crystal_roi, total_waveplate_ro
 
         result = ui.search(total_waveplate_regex, total_waveplate_roi)
         if not result:
-            logger.warning(f"total waveplate number not found")
+            logger.warning("Total de Placas de Onda não encontrado")
             return None, None
         logger.debug(f"total waveplate: {result[0].text}")
 
@@ -315,7 +315,7 @@ def _query_waveplate(ctx: NodeContext, waveplate_crystal_roi, total_waveplate_ro
         total_waveplate = int(zero_pattern.sub("0", match.group(2)))
         if total_waveplate != max_waveplate:
             return None, None
-        logger.info(f"waveplate: {waveplate_crystal}, {cur_waveplate}/{total_waveplate}")
+        logger.info(f"Placas de Onda: {waveplate_crystal}, {cur_waveplate}/{total_waveplate}")
         return cur_waveplate, waveplate_crystal
     except (KeyboardInterrupt, StopError) as e:
         raise e
@@ -331,7 +331,7 @@ def object_detection(
         timeout: float = 20.0
 ):
     if not search_echo and not search_reward:
-        raise ValueError("Must choose one: search_echo or search_reward")
+        raise ValueError("Escolha uma opção: search_echo ou search_reward")
 
     ui = UIOp(ctx)
     ui.activate().sleep(0.1).camera_reset().sleep(0.5)
@@ -359,7 +359,7 @@ def object_detection(
         if absorb and claim_rewards:
             # 吸收在下则滚动到下方
             if absorb[0].y1 < claim_rewards[0].y1:
-                logger.info("向下滚动")
+                logger.info("Rolando para baixo")
                 ctx.control_service.scroll_mouse(-1)
                 time.sleep(0.5)
             ui.pick_up().sleep(2)
@@ -407,15 +407,15 @@ def object_detection(
         half_window_width = window_bbox.width() // 2
 
         if det.x1 * 0.75 > half_window_width:  # 目标中在角色右侧
-            logger.info("发现目标 向右移动")
+            logger.info("Alvo encontrado; movendo para a direita")
             ctx.control_service.right(0.1)
             ui.sleep(0.05)
         elif echo_x2 * 1.1 < half_window_width:  # 目标中在角色左侧
-            logger.info("发现目标 向左移动")
+            logger.info("Alvo encontrado; movendo para a esquerda")
             ctx.control_service.left(0.1)
             ui.sleep(0.05)
         else:
-            logger.info("发现目标 向前移动")
+            logger.info("Alvo encontrado; movendo para a frente")
             # self._control_service.up(0.1)
             # ui.sleep(0.01)
             for _ in range(5):
@@ -461,7 +461,7 @@ def linear_spacing(start: int, end: int, num_points: int, offset=None):
     :return: 所有点的位置坐标
     """
     if num_points < 2:
-        raise ValueError("num_points 必须 >= 2")
+        raise ValueError("num_points deve ser maior ou igual a 2")
 
     # 计算等分位置
     segments = num_points - 1

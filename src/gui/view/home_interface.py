@@ -51,7 +51,7 @@ class BannerWidget(QWidget):
 
         self.mainLayout = QHBoxLayout(self)
 
-        self.galleryLabel = QLabel(f'鸣潮\nWuthering Waves Assistant', self)
+        self.galleryLabel = QLabel('Wuthering Waves Assistant\nEdição PT-BR', self)
         self.galleryLabel.setObjectName('galleryLabel')
         self.galleryLabel.setWordWrap(True)
 
@@ -62,6 +62,8 @@ class BannerWidget(QWidget):
 
 
 class BasicSettingWidget(QWidget):
+    gameLanguageChanged = Signal(str)
+
     def __init__(self, /, parent=None):
         super().__init__(parent)
 
@@ -70,6 +72,7 @@ class BasicSettingWidget(QWidget):
         self.lang = [
             Language.ZH,
             Language.EN,
+            Language.PT,
             Language.ZH_TW,
             Language.JA,
             Language.KO,
@@ -81,6 +84,7 @@ class BasicSettingWidget(QWidget):
         self.langDesc = [
             "简体中文",
             "English",
+            "Português (Brasil)",
             "繁體中文",
             "日本語",
             "한국어",
@@ -114,7 +118,7 @@ class BasicSettingWidget(QWidget):
             # self.langComboBox.addItem(self.tr("{text} - {sign}").format(
             #     text=self.langDesc[i], sign=self.lang[i].value), userData=self.lang[i].value)
             self.langComboBox.addItem(self.tr("{text}").format(text=self.langDesc[i]), userData=self.lang[i].value)
-            if i > 1:
+            if self.lang[i] not in {Language.ZH, Language.EN, Language.PT}:
                 self.langComboBox.setItemEnabled(self.langComboBox.count() - 1, False)
 
         self.deviceLayout = QHBoxLayout()
@@ -173,8 +177,11 @@ class BasicSettingWidget(QWidget):
         signalBus.homeMessageSignal.connect(self.__onMessageChanged)
 
     def __onLangComboBoxChanged(self, index):
-        paramConfig.set(paramConfig.gameLanguage, self.langComboBox.currentData())
-        # self.__refreshGridLayout(index)
+        language = self.langComboBox.currentData()
+        if language is None:
+            return
+        paramConfig.set(paramConfig.gameLanguage, language)
+        self.gameLanguageChanged.emit(language)
 
     def __onDeviceComboBoxChanged(self, index):
         paramConfig.set(paramConfig.device, self.deviceComboBox.currentData())
@@ -187,8 +194,10 @@ class BasicSettingWidget(QWidget):
             scrollbar.setValue(scrollbar.maximum())
 
     def __loadConfig(self):
-        self.langComboBox.setCurrentIndex(
-            self.langComboBox.findData(paramConfig.get(paramConfig.gameLanguage)))
+        language_index = self.langComboBox.findData(paramConfig.get(paramConfig.gameLanguage))
+        if language_index < 0:
+            language_index = self.langComboBox.findData("pt")
+        self.langComboBox.setCurrentIndex(language_index)
         self.deviceComboBox.setCurrentIndex(
             self.deviceComboBox.findData(paramConfig.get(paramConfig.device)))
 
@@ -311,7 +320,7 @@ class BottomWidget(CardWidget):
             try:
                 self._submittedTask.submitTask(False)
             except Exception as e:
-                logger.exception(f"submit task error", e)
+                logger.exception("Erro ao enviar a tarefa: %s", e)
                 return
             self._submittedTask = None
             self.__refreshButton(False)
@@ -325,7 +334,7 @@ class BottomWidget(CardWidget):
         try:
             result = self.currentTask.submitTask(True)
         except Exception as e:
-            logger.exception(f"submit task error", e)
+            logger.exception("Erro ao enviar a tarefa: %s", e)
             self.__refreshButton(False)
             return
 
@@ -463,7 +472,8 @@ class HomeV2Interface(ScrollArea):
         self.mainLayout.setSpacing(0)
 
     def __connectSignalToSlot(self):
-        pass
+        self.basicSettingWidget.gameLanguageChanged.connect(
+            self.contentWidget.daily.setGameLanguage)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

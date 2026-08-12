@@ -112,7 +112,7 @@ class BossRushWidget(QWidget):
         # for boss in BossNameEnum:
         new_boss = 4  # TODO 增加boss参数，根据版本区最新版本boss数量
         for i, boss in enumerate(reversed(list(BossNameEnum))):
-            checkCard = CheckCard(boss.value, parent=self)
+            checkCard = CheckCard(self.tr(boss.value), parent=self)
             if i < new_boss or boss == BossNameEnum.NightmareMourningAix:
                 checkCard.setBackground()
             self.checkCards[boss] = checkCard
@@ -127,7 +127,7 @@ class BossRushWidget(QWidget):
 
         self.lineEdit.setMaximumWidth(300)
         self.lineEdit.setClearButtonEnabled(True)
-        self.lineEdit.setPlaceholderText('施工中...')
+        self.lineEdit.setPlaceholderText(self.tr('施工中...'))
 
         for boss, card in self.checkCards.items():
             self.flowLayout.addWidget(card)
@@ -202,7 +202,7 @@ class BossRushWidget(QWidget):
     def __showAboutFlyout(self):
         Flyout.create(
             # icon=InfoBarIcon.INFORMATION,
-            title='关于:',
+            title=self.tr('关于') + ':',
             content=self.tr(
                 '任意配队，人数不限，建议带奶，建议1280x720最低画质挂机还省电。'
                 '\n若游戏内没有1280x720分辨率选项，或修改后游戏微闪一下没有反应，这是游戏的问题，换成其他修改后有效的小分辨率，如1600x900。'

@@ -14,15 +14,18 @@ logger = logging.getLogger(__name__)
 
 def before():
     if windows_util.is_admin():
-        logger.debug("管理员身份运行中")
+        logger.debug("Executando como administrador")
     else:
-        logger.error("请以管理员身份运行！")
-        windows_util.show_windows_notification("请以管理员身份运行！")
+        logger.error("Execute o aplicativo como administrador!")
+        windows_util.show_windows_notification("Execute o aplicativo como administrador!")
         sys.exit(0)
 
 
 def gui_is_exist():
-    windows_util.show_windows_notification("同一路径下只能启动一个实例！多开可拷贝一份代码到其他目录启动")
+    windows_util.show_windows_notification(
+        "Apenas uma instância pode ser executada a partir da mesma pasta. "
+        "Para abrir outra, copie o programa para uma pasta diferente."
+    )
     sys.exit(0)
 
 
@@ -39,7 +42,7 @@ def parse_args():
 
 
 def run():
-    logger.info(f"WWA v{__version__}, free and open-source")
+    logger.info(f"WWA v{__version__}, gratuito e de código aberto")
     before()
 
     args = parse_args()

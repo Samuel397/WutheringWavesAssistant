@@ -47,6 +47,7 @@ if _rapidocr_version < Version("3.0.0"):
     }
 else:
     from rapidocr import RapidOCR, VisRes, EngineType
+    from rapidocr.utils.typings import LangRec
     # from rapidocr.utils.output import RapidOCROutput  # v3.5.0
 
     _COMMON_PARAMS = {
@@ -83,7 +84,7 @@ else:
     }
 
 
-def create_ocr(*, use_gpu: bool = False, use_dml=False) -> RapidOCR:
+def create_ocr(*, use_gpu: bool = False, use_dml=False, latin: bool = False) -> RapidOCR:
     # https://rapidai.github.io/RapidOCRDocs/main/install_usage/rapidocr/API/RapidOCR/#_1
     if use_gpu:
         params = _GPU_PADDLEPADDLE_PARAMS
@@ -91,6 +92,11 @@ def create_ocr(*, use_gpu: bool = False, use_dml=False) -> RapidOCR:
         params = _DML_PARAMS
     else:
         params = _CPU_PARAMS
+    params = dict(params)
+    if latin:
+        if _rapidocr_version < Version("3.0.0"):
+            raise RuntimeError("O OCR em português requer RapidOCR 3.0 ou mais recente")
+        params["Rec.lang_type"] = LangRec.LATIN
     engine = RapidOCR(
         params=params
     )  # 输入BGR
@@ -108,14 +114,14 @@ def model_warmup(engine: RapidOCR, batch_size: int = 1, min_size: int = 10, max_
     ONNXRuntime with CUDA support is not performing well with arbitrary input size
     So we need to warmup the model with arbitrary input size
     """
-    logger.info("Warming up model...")
+    logger.info("Aquecendo o modelo...")
     img_names = ["Dialogue_001.png", "Login_001.png", "Revival_001.png"]
     imgs = [img_util.read_img(file_util.get_assets_screenshot(img_name)) for img_name in img_names]
     index = 0
     for i in tqdm(range(min_size, max_size), desc="Warming up model"):
         engine(imgs[index % 3], use_det=True, use_rec=True, use_cls=False)
         index += 1
-    logger.info("Model warmup completed")
+    logger.info("Aquecimento do modelo concluído")
 
 
 def print_ocr_result(output):

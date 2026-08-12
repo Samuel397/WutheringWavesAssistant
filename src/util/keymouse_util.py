@@ -200,7 +200,7 @@ def mouse_drag(hwnd,
     start_y = int(p1[1])
     end_x = int(p2[0])
     end_y = int(p2[1])
-    logger.warning(f"Mouse drag: {p1}, {p2}")
+    logger.warning(f"Arrasto do mouse: {p1}, {p2}")
 
     # 鼠标按下
     win32gui.PostMessage(hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, win32api.MAKELONG(start_x, start_y))

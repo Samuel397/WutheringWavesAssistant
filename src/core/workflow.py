@@ -16,7 +16,7 @@ from typing import Callable, Dict, Optional, Any, List, Tuple
 from src.config.gui_config import ParamConfig
 from src.core.exceptions import StopError
 from src.core.geometry import Scaler
-from src.core.i18n import I18nTr
+from src.core.i18n import I18nTr, Language
 from src.core.interface import WindowService, ImgService, OCRService, ControlService, ODService, BossInfoService, \
     EchoMergeService, GlobalPageService, CombatService, PageEventService, GuidebookService
 from src.core.runtime import RuntimeConfig
@@ -137,7 +137,7 @@ class TaskSpec:
     # 游戏路径，用于重启游戏
     game_path: Optional[str] = None
     # 游戏文本语言
-    game_lang: Optional[str] = None
+    game_lang: Optional[Language] = None
     # 配置文件
     param_config_path: Optional[str] = None
     param_config_snapshot: Optional[str] = None
@@ -292,7 +292,7 @@ class Node:
                 ctx.stats.retries[self.namespace][self.name] = retries + 1
                 if attempts > self.retry:
                     raise e
-                logger.info(f"[NODE] retry {self.namespace}.{self.name} ({attempts}/{self.retry})")
+                logger.info(f"[NODE] nova tentativa {self.namespace}.{self.name} ({attempts}/{self.retry})")
 
     def _wait_until(
             self,
@@ -322,14 +322,14 @@ def node(name: Optional[str] = None, namespace: Optional[str] = None, retry: int
     """
 
     if callable(name):
-        raise ValueError("You must use @node()")
+        raise ValueError("Você deve usar @node()")
 
     def decorator(func):
         _name = name or func.__name__
         _namespace = namespace or func.__module__
         _node_map = NODE_REGISTRY.setdefault(_namespace, {})
         if _name in _node_map:
-            raise KeyError(f"Node already registered: {(_namespace, _name)}")
+            raise KeyError(f"Node já registrado: {(_namespace, _name)}")
         _node_map[_name] = Node(
             func,
             _name,
@@ -372,10 +372,10 @@ class WorkflowEngine:
 
     def source(self, src: str, is_start: bool = False):
         if not src:
-            raise ValueError("node name cannot be empty")
+            raise ValueError("O nome do node não pode ficar vazio")
         if is_start:
             if self.start_node:
-                raise ValueError(f"start node already exists: '{self.start_node}'")
+                raise ValueError(f"O node inicial já existe: '{self.start_node}'")
             self.start_node = src
 
         return TransitionBuilder(self, src)
@@ -383,7 +383,7 @@ class WorkflowEngine:
     def exception(self, src: str):
         """抑制异常，转到指定节点，不包括(KeyboardInterrupt, StopError)"""
         if not src:
-            raise ValueError("node name cannot be empty")
+            raise ValueError("O nome do node não pode ficar vazio")
         self.error = src
 
     def add_transition(self, src, condition, dst, name=""):
@@ -399,9 +399,9 @@ class WorkflowEngine:
     def _(self, ctx: NodeContext, namespace: str, start_node: Optional[str] = None, **kwargs):
         current = start_node if start_node else self.start_node
         if not namespace:
-            raise ValueError("namespace cannot be empty")
+            raise ValueError("namespace não pode ficar vazio")
         if not current:
-            raise ValueError("start node does not exist")
+            raise ValueError("O node inicial não existe")
         while current:
             if not ctx.runtime.stop_event.is_set():
                 logger.debug("[ENGINE] stopped")
@@ -421,10 +421,10 @@ class WorkflowEngine:
             except Exception as e:
                 ctx.shared.last_result = None
                 if self.error:
-                    logger.exception(f"[ENGINE] run error: {ctx.runtime.current_node}")
+                    logger.exception(f"[ENGINE] erro de execução: {ctx.runtime.current_node}")
                     current = self.error
                     continue
-                logger.error(f"[ENGINE] run error: {ctx.runtime.current_node}")
+                logger.error(f"[ENGINE] erro de execução: {ctx.runtime.current_node}")
                 raise e
 
             ctx.shared.last_result = result
@@ -477,7 +477,7 @@ class TransitionBuilder:
     def to(self, dst: str):
         """目标状态"""
         if dst is None:
-            raise ValueError("dst cannot be None")
+            raise ValueError("dst não pode ser None")
         self.wf.add_transition(self.src, self._condition, dst, self._name)
         return self
 

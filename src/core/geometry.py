@@ -39,7 +39,7 @@ class Point:
             return self.x
         elif key == 1:
             return self.y
-        raise IndexError("Index out of range")
+        raise IndexError("Índice fora dos limites")
 
     def __str__(self):
         return f"Point({self.x}, {self.y})"
@@ -92,7 +92,7 @@ class AnchorBBox:
     @classmethod
     def from_list(cls, data: List[int]):
         if len(data) < 6:
-            raise ValueError(f"Expected at least 6 elements, got {len(data)}")
+            raise ValueError(f"Eram esperados pelo menos 6 elementos; recebidos: {len(data)}")
         return cls(
             AnchorPoint(data[0], data[1], Align(data[2])),
             AnchorPoint(data[3], data[4], Align(data[5]))
@@ -405,7 +405,7 @@ class Detection(BBox):
     def __post_init__(self):
         """验证分数范围"""
         if not 0 <= self.score <= 1:
-            raise ValueError(f"Score must be in [0, 1], got {self.score}")
+            raise ValueError(f"A pontuação deve estar no intervalo [0, 1]; valor recebido: {self.score}")
 
     @classmethod
     def from_bbox(cls, bbox: BBox, score: float, **kwargs) -> 'Detection':
@@ -477,9 +477,9 @@ class Scaler:
         self.cur_w, self.cur_h = cur_wh
 
         if self.base_w == 0 or self.base_h == 0:
-            raise ValueError("base size invalid")
+            raise ValueError("Tamanho base inválido")
         if self.cur_w == 0 or self.cur_h == 0:
-            raise ValueError("current size invalid")
+            raise ValueError("Tamanho atual inválido")
 
         # 基础比例
         self._ratio_w = self.cur_w / self.base_w
@@ -524,10 +524,10 @@ class Scaler:
         hy = align & (Align.Top | Align.Middle | Align.Bottom)
 
         if hx not in (Align.Left, Align.Center, Align.Right):
-            raise ValueError(f"Invalid horizontal align: {align}")
+            raise ValueError(f"Alinhamento horizontal inválido: {align}")
 
         if hy not in (Align.Top, Align.Middle, Align.Bottom):
-            raise ValueError(f"Invalid vertical align: {align}")
+            raise ValueError(f"Alinhamento vertical inválido: {align}")
 
     # ---------- X 轴映射 ----------
     def _map_x(self, x: float, align: Align) -> float:

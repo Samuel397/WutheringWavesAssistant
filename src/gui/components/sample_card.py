@@ -203,7 +203,7 @@ class RunCard(CardWidget):
         # if self.button.isChecked():
         if not self.running_task_name:
             if self.checked_task_name:
-                logger.info("任务名: %s", self.checked_task_name)
+                logger.info("Nome da tarefa: %s", self.checked_task_name)
 
                 if self.checked_task_name == "AutoBossProcessTask" and paramConfig and paramConfig.bossName:
                     try:

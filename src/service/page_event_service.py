@@ -13,13 +13,78 @@ from src.core.combat.combat_core import ResonatorNameEnum, BaseResonator, Morph
 from src.core.combat.combat_system import CombatSystem
 from src.core.contexts import Context, Status
 from src.core.geometry import AnchorPoint, Align, AnchorBBox
-from src.core.i18n import Language
+from src.core.i18n import I18nText, I18nTr, Language
 from src.core.interface import ControlService, OCRService, PageEventService, ImgService, WindowService, ODService, \
     BossInfoService
 from src.core.pages import ConditionalAction, TextMatch, Page
 from src.core.regions import TextPosition, DynamicPosition, Position, DynamicPointTransformer, AlignEnum
+from src.core.resonator import Resonator
+from src.core.pt_i18n import pt_fuzzy_regex
 
 logger = logging.getLogger(__name__)
+
+
+def _ocr_exact(*texts: str) -> str:
+    """Build an anchored OCR pattern tolerant of whitespace and PT accent loss."""
+    alternatives = [
+        r"\s*".join(
+            pt_fuzzy_regex(re.escape(part))
+            for part in re.split(r"\s+", text.strip())
+        )
+        for text in texts
+        if text
+    ]
+    return rf"^(?:{'|'.join(alternatives)})$"
+
+
+# Keep these keys independent from the language selected for the assistant UI.
+# Portuguese values are the official Global 3.5 TextMap strings used by the game.
+OCR_CONFIRM = _ocr_exact("确认", "确定", "Confirm", "Confirmar")
+OCR_CANCEL = _ocr_exact("取消", "Cancel", "Cancelar")
+OCR_RESTART = _ocr_exact(
+    "重新挑战", "Restart", "Reiniciar", "Tentar novamente", "Tentar o desafio novamente", "Desafiar novamente"
+)
+OCR_CLAIM_REWARDS = _ocr_exact(
+    "领取奖励", "Claim Rewards", "Claim the rewards", "Coletar Recompensas", "Resgatar recompensas",
+    "Resgate recompensas", "Resgatar"
+)
+OCR_ABSORB = _ocr_exact("吸收", "Absorb", "Absorver")
+OCR_FAST_TRAVEL = _ocr_exact("快速旅行", "Fast Travel", "Viagem rápida")
+OCR_TERMINAL = _ocr_exact("终端", "Terminal")
+OCR_TEAM = _ocr_exact("编队", "Team", "Equipe")
+OCR_EVENTS = _ocr_exact("活动", "Events", "Eventos")
+OCR_MAP = _ocr_exact("地图", "Map", "Mapa")
+OCR_QUICK_SETUP = _ocr_exact("快速编队", "Quick Setup", "QuickSetup", "Configuração rápida")
+OCR_DO_NOT_SHOW_AGAIN = _ocr_exact("本次登录不再提示", "Do not show again", "Não mostrar novamente")
+OCR_SWITCH_MAP = _ocr_exact("切换地图", "Switch Map", "Trocar mapa")
+OCR_SEARCH = _ocr_exact("输入搜索内容", "Enter search content", "Pesquisar")
+OCR_DETECT = _ocr_exact("探测", "Detect", "Detectar", "Rastrear")
+OCR_ENTER = _ocr_exact("进入", "Enter", "Entrar", "Entre")
+OCR_SOLO_CHALLENGE = _ocr_exact("单人挑战", "Solo Challenge", "Desafio individual", "Desafio Solo")
+OCR_START_CHALLENGE = _ocr_exact(
+    "开启挑战", "Start Challenge", "Iniciar desafio", "Iniciar Desafio", "Inicie o desafio", "Inicie desafio"
+)
+OCR_INSUFFICIENT_WAVEPLATES = _ocr_exact(
+    "结晶波片不足", "Insufficient Waveplates", "Placas Onduladas insuficientes"
+)
+OCR_SELECT_REVIVAL_ITEM = _ocr_exact(
+    "选择复苏物品", "Select a Revival Item", "Selecione um item de reavivamento"
+)
+
+
+def resolve_resonator_ocr_name(ocr_text: str, lang: Language) -> str:
+    """Resolve a localized roster name to the Chinese ID expected by CombatSystem."""
+    if lang == Language.ZH:
+        enum_obj = ResonatorNameEnum.get_enum_by_ocr_text(ocr_text)
+        return enum_obj.value if enum_obj else ResonatorNameEnum.rover.value
+
+    translator = I18nTr(lang)
+    for key in Resonator.i18n_keys():
+        localized = translator(key)
+        if localized and re.search(str(localized), ocr_text.strip(), localized.flags):
+            canonical = I18nTr(Language.ZH)(key)
+            return canonical.raw if canonical else ResonatorNameEnum.rover.value
+    return ResonatorNameEnum.rover.value
 
 
 class PageEventAbstractService(PageEventService, ABC):
@@ -84,7 +149,7 @@ class PageEventAbstractService(PageEventService, ABC):
         if conditional_actions is None:
             conditional_actions = self.get_conditional_actions()
         if not pages and not conditional_actions:
-            raise ValueError("未配置匹配页面/条件操作")
+            raise ValueError("Nenhuma página correspondente ou ação condicional foi configurada")
         if src_img is None:
             src_img = self._img_service.screenshot()
         if img is None:
@@ -97,12 +162,12 @@ class PageEventAbstractService(PageEventService, ABC):
         for page in pages:
             if not page.is_match(src_img, img, ocr_results):
                 continue
-            logger.info("当前页面：%s", page.name)
+            logger.info("Página atual: %s", page.name)
             page.action(page.matchPositions)
         for conditionalAction in conditional_actions:
             if not conditionalAction():
                 continue
-            logger.info("当前条件操作: %s", conditionalAction.name)
+            logger.info("Ação condicional atual: %s", conditionalAction.name)
             conditionalAction.action()
 
     def build_UI_F2_Guidebook_Activity(self, action: Callable = None) -> Page:
@@ -122,7 +187,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="活跃度|Activity",
-                    text=r"^(活跃度|Activity)$",
+                    text=_ocr_exact("活跃度", "Activity", "Pts de atividade", "Ponto de Atividade", "Pontos de atividade"),
                     position=DynamicPosition(
                         rate=(
                             0.0,
@@ -138,7 +203,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 ),
                 TextMatch(
                     name="领取|Claim",
-                    text=r"^(领取|Claim)$",
+                    text=_ocr_exact("领取", "Claim", "Resgatar"),
                     must=False,
                     position=DynamicPosition(
                         rate=(
@@ -167,7 +232,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="周期挑战|Recurring Challenges",
-                    text=r"^(周期挑战|Recurring\s*Challenges)$",
+                    text=_ocr_exact("周期挑战", "Recurring Challenges", "Desafios recorrentes"),
                     position=DynamicPosition(
                         rate=(
                             0.0,
@@ -179,23 +244,23 @@ class PageEventAbstractService(PageEventService, ABC):
                 ),
                 TextMatch(
                     name="凝素领域|Forgery Challenge",
-                    text=r"^(凝素领域|Forgery\s*Challenge)$",
+                    text=_ocr_exact("凝素领域", "Forgery Challenge", "Desafio de Forja"),
                 ),
                 TextMatch(
                     name="模拟领域|Simulation Challenge",
-                    text=r"^(模拟领域|Simulation\s*Challenge)$",
+                    text=_ocr_exact("模拟领域", "Simulation Challenge", "Desafio de simulação"),
                 ),
                 TextMatch(
                     name="讨伐强敌|Boss Challenge",
-                    text=r"^(讨伐强敌|Boss\s*Challenge)$",
+                    text=_ocr_exact("讨伐强敌", "Boss Challenge", "Desafio de Chefe"),
                 ),
                 TextMatch(
                     name="无音清剿|Tacet Suppression",
-                    text=r"^(无音清剿|Tacet\s*Suppression)$",
+                    text=_ocr_exact("无音清剿", "Tacet Suppression", "Supressão Dissonante"),
                 ),
                 TextMatch(
                     name="战歌重奏|Weekly Challenge",
-                    text=r"^(战歌重奏|Weekly\s*Challenge)$",
+                    text=_ocr_exact("战歌重奏", "Weekly Challenge", "Desafio Semanal"),
                 ),
                 # TextMatch(
                 #     name="逆境深塔",
@@ -242,7 +307,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="强者之路|PathOfGrowth",
-                    text=r"^强者之路",
+                    text=_ocr_exact("强者之路", "Path of Growth", "Caminho do crescimento"),
                     position=DynamicPosition(
                         rate=(
                             0.0,
@@ -254,15 +319,15 @@ class PageEventAbstractService(PageEventService, ABC):
                 ),
                 TextMatch(
                     name="全息战略",
-                    text=r"^全息战略$",
+                    text=_ocr_exact("全息战略", "Tactical Hologram", "Holograma Tático"),
                 ),
                 TextMatch(
                     name="角色教学",
-                    text=r"^角色教学$",
+                    text=_ocr_exact("角色教学", "Resonator Tutorial", "Tutorial de Habilidade de Ressonante", "Treinamento de habilidade"),
                 ),
                 TextMatch(
                     name="基础训练",
-                    text=r"^基础训练$",
+                    text=_ocr_exact("基础训练", "Basic Training", "Treinamento básico"),
                 ),
             ],
             action=action if action else Page.error_action
@@ -281,7 +346,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="残象探寻|EchoHunting",
-                    text=r"^残象探寻$",
+                    text=_ocr_exact("残象探寻", "Echo Hunting", "Rastreamento de Inimigo"),
                     position=DynamicPosition(
                         rate=(
                             0.0,
@@ -293,19 +358,19 @@ class PageEventAbstractService(PageEventService, ABC):
                 ),
                 TextMatch(
                     name="鸣钟之龟",
-                    text=r"^鸣钟之龟$",
+                    text=_ocr_exact("鸣钟之龟", "Bell-Borne Geochelone", "Geobuti-sineiro"),
                 ),
                 TextMatch(
                     name="伤痕",
-                    text=r"^伤痕$",
+                    text=_ocr_exact("伤痕", "Scar"),
                 ),
                 TextMatch(
                     name="无妄者",
-                    text=r"^无妄者$",
+                    text=_ocr_exact("无妄者", "Dreamless", "Insone", "Atroz"),
                 ),
                 TextMatch(
                     name="探测",
-                    text=r"^探测$",
+                    text=_ocr_exact("探测", "Detect", "Detectar", "Rastrear"),
                 ),
             ],
             action=action if action else Page.error_action
@@ -324,7 +389,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="漂泊日志|Milestones",
-                    text=r"^(漂泊日志|Milestones)$",
+                    text=_ocr_exact("漂泊日志", "Milestones", "Marcos"),
                     position=DynamicPosition(
                         rate=(
                             0.0,
@@ -336,7 +401,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 ),
                 TextMatch(
                     name="任务进度",
-                    text=r"^任务进度$",
+                    text=_ocr_exact("任务进度", "Quest Progress", "Progresso da missão", "Desafio"),
                     position=DynamicPosition(
                         rate=(
                             1 / 2,
@@ -348,7 +413,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 ),
                 TextMatch(
                     name="阶段奖励",
-                    text=r"^阶段奖励$",
+                    text=_ocr_exact("阶段奖励", "Phase Rewards", "Recompensas de fase", "Recompensas"),
                     position=DynamicPosition(
                         rate=(
                             1 / 2,
@@ -388,7 +453,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="终端|Terminal",
-                    text=r"^(终端|Terminal)$",
+                    text=OCR_TERMINAL,
                     position=DynamicPosition(
                         rate=(
                             0.0,
@@ -404,11 +469,11 @@ class PageEventAbstractService(PageEventService, ABC):
                 # ),
                 TextMatch(
                     name="编队|Team",
-                    text=r"^(编队|Team)$",
+                    text=OCR_TEAM,
                 ),
                 TextMatch(
                     name="活动|Events",
-                    text=r"^(活动|Events)$",
+                    text=OCR_EVENTS,
                 ),
             ],
             action=action if action else Page.error_action
@@ -438,11 +503,11 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="获得|Items Obtained",
-                    text=r"^(获得|Items\s*Obtained)$",
+                    text=_ocr_exact("获得", "Items Obtained", "Itens obtidos"),
                 ),
                 TextMatch(
                     name="点击空白区域关闭|Tap the blank area to close",
-                    text=r"^(点击空白区域关闭|Tap\s*the\s*blank\s*area\s*to\s*close)$",
+                    text=_ocr_exact("点击空白区域关闭", "Tap the blank area to close", "Toque na área em branco para fechar", "Toque na área vazia para fechar"),
                 ),
             ],
             action=action if action else Page.error_action
@@ -456,16 +521,16 @@ class PageEventAbstractService(PageEventService, ABC):
                 time.sleep(0.2)
                 if self._need_retry() and not self._info.needHeal:
                     if self._boss_info_service.is_nightmare(self._info.lastBossName):
-                        logger.info("治疗次数：%s", self._info.healCount)
+                        logger.info("Curas: %s", self._info.healCount)
                     elif self._boss_info_service.is_auto_pickup(self._info.lastBossName):
-                        logger.info("战斗次数：%s 治疗次数：%s", self._info.fightCount, self._info.healCount)
+                        logger.info("Combates: %s; curas: %s", self._info.fightCount, self._info.healCount)
                     else:
-                        logger.info("战斗次数：%s 吸收次数：%s 治疗次数：%s", self._info.fightCount,
+                        logger.info("Combates: %s; absorções: %s; curas: %s", self._info.fightCount,
                                     self._info.absorptionCount, self._info.healCount)
                     self.click_position(positions["重新挑战|Restart"])
                     if not self._info.lastBossName:
                         self._info.lastBossName = self._config.TargetBoss[0]
-                    logger.info(f"重新挑战{self._info.lastBossName}副本")
+                    logger.info(f"Desafiando novamente a instância {self._info.lastBossName}")
                     time.sleep(4)
                     self._info.in_dungeon = True
                     self._info.status = Status.idle
@@ -478,7 +543,7 @@ class PageEventAbstractService(PageEventService, ABC):
                     self.click_position(pos)
                     time.sleep(3)
                     self.wait_home()
-                    logger.info(f"{self._info.lastBossName}副本结束")
+                    logger.info(f"Instância {self._info.lastBossName} concluída")
                     time.sleep(2)
                     self._info.in_dungeon = False
                     self._info.status = Status.idle
@@ -502,15 +567,15 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="提示|Note",
-                    text=r"^(提示|Note)$",
+                    text=_ocr_exact("提示", "Note", "Nota"),
                 ),
                 TextMatch(
                     name="确认|Confirm",
-                    text=r"^(确认|Confirm)$",
+                    text=OCR_CONFIRM,
                 ),
                 TextMatch(
                     name="重新挑战|Restart",
-                    text=r"^(重新挑战|Restart)$",
+                    text=OCR_RESTART,
                 ),
             ],
             action=action if action else Page.error_action
@@ -526,7 +591,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 self.click_position(pos)
                 time.sleep(3)
                 self.wait_home()
-                logger.info(f"{self._info.lastBossName}副本结束")
+                logger.info(f"Instância {self._info.lastBossName} concluída")
                 time.sleep(2)
                 self._info.in_dungeon = False
                 self._info.status = Status.idle
@@ -550,19 +615,19 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="提示|Notice",
-                    text=r"^(提示|Notice)$",
+                    text=_ocr_exact("提示", "Notice", "Aviso"),
                 ),
                 TextMatch(
                     name="确认离开|Leave this domain",
-                    text=r"^(确认离开|Leave\s*this\s*domain)",
+                    text=r"^(?:确认离开|Leave\s*this\s*domain|Sair\s*deste\s*domínio|Quer\s*sair\??)$",
                 ),
                 TextMatch(
                     name="确认|Confirm",
-                    text=r"^(确认|Confirm)$",
+                    text=OCR_CONFIRM,
                 ),
                 TextMatch(
                     name="取消|Cancel",
-                    text=r"^(取消|Cancel)$",
+                    text=OCR_CANCEL,
                 ),
             ],
             action=action if action else Page.error_action
@@ -591,7 +656,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="进入凝素领域|EnterForgeryChallenge",
-                    text=r"^(进入.{0,2}凝素领域.{0,2}|Enter\s*the.{0,2}ForgeryChallenge.{0,2})$",
+                    text=r"^(?:进入.{0,2}凝素领域.{0,2}|Enter\s*the.{0,2}Forgery\s*Challenge.{0,2}|Entr(?:e|ar).{0,4}(?:no\s*)?[\"“”']?Desafio\s*d[ae]\s*Forja[\"“”']?.{0,2})$",
                 ),
             ],
             action=action if action else Page.error_action
@@ -621,15 +686,15 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="单人挑战|Solo Challenge",
-                    text=r"^(单人挑战|Solo\s*Challenge)$",
+                    text=_ocr_exact("单人挑战", "Solo Challenge", "Desafio individual", "Desafio Solo"),
                 ),
                 TextMatch(
                     name="多人匹配|Match",
-                    text=r"^(多人匹配|Match)$",
+                    text=_ocr_exact("多人匹配", "Match", "Partida Multijogador", "Partida"),
                 ),
                 TextMatch(
                     name="等级|Level",
-                    text=r"^(等级\d{2}|Match\d{2})$",
+                    text=r"^(?:等级|Level|Nível)\s*\d{1,3}$",
                 ),
                 # TextMatch(
                 #     name="欲燃之森|Marigold Woods",
@@ -666,15 +731,15 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="领取奖励|Claim Rewards",
-                    text=r"^(领取奖励|Claim\s*Rewards)$",
+                    text=OCR_CLAIM_REWARDS,
                 ),
                 TextMatch(
                     name="取消|Cancel",
-                    text=r"^(取消|Cancel)$",
+                    text=OCR_CANCEL,
                 ),
                 TextMatch(
                     name="确认|Confirm",
-                    text=r"^(确认|Confirm)$",
+                    text=OCR_CONFIRM,
                 ),
             ],
             action=action if action else Page.error_action
@@ -707,15 +772,15 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="领取奖励|Claim Rewards",
-                    text=r"^(领取奖励|Claim\s*Rewards)$",
+                    text=OCR_CLAIM_REWARDS,
                 ),
                 TextMatch(
                     name="单倍领取|Claim",
-                    text=r"^(单倍领取|Claim)$",
+                    text=_ocr_exact("单倍领取", "Claim", "Resgatar"),
                 ),
                 TextMatch(
                     name="双倍领取|Claimx2",
-                    text=r"^(双倍领取|Claim.?2)$",
+                    text=r"^(?:双倍领取|Claim.?2|Resgatar\s*[×xX*]\s*2)$",
                 ),
             ],
             action=action if action else Page.error_action
@@ -742,15 +807,15 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="领取奖励|Claim Rewards",
-                    text=r"^(领取奖励|Claim\s*Rewards)$",
+                    text=OCR_CLAIM_REWARDS,
                 ),
                 TextMatch(
                     name="重新挑战|Restart",
-                    text=r"^(重新挑战|Restart)$",
+                    text=OCR_RESTART,
                 ),
                 TextMatch(
                     name="确认|Confirm",
-                    text=r"^(确认|Confirm)$",
+                    text=OCR_CONFIRM,
                 ),
             ],
             action=action if action else Page.error_action
@@ -779,11 +844,11 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="失去意识",
-                    text="失去意识",
+                    text=r"(?:失去意识|Defeated|Derrotad[oa]|Derrota)",
                 ),
                 TextMatch(
                     name="复苏",
-                    text="复苏",
+                    text=r"(?:复苏|Revive|Reviver|Renascer)",
                 ),
             ],
             action=action if action else Page.error_action
@@ -803,7 +868,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="声弦|Resonance Cord",
-                    text=r"^(声弦|Resonance Cord)$",
+                    text=_ocr_exact("声弦", "Resonance Cord", "Corda de Ressonância"),
                 ),
             ],
             action=action if action else Page.error_action
@@ -829,7 +894,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 ),
                 TextMatch(
                     name="确认",
-                    text="^确认$",
+                    text=OCR_CONFIRM,
                 ),
             ],
             action=action if action else Page.error_action
@@ -856,7 +921,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 ),
                 TextMatch(
                     name="确认|Confirm",
-                    text=r"^(确认|Confirm)$",
+                    text=OCR_CONFIRM,
                 ),
             ],
             action=action if action else Page.error_action
@@ -870,7 +935,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 #     return False
 
                 time.sleep(0.2)
-                if not self._ocr_service.find_text(["吸收"]):
+                if not self._ocr_service.find_text(OCR_ABSORB):
                     return False
                 # dump_img()
 
@@ -889,13 +954,13 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="吸收",
-                    text=r"^吸收$",
+                    text=OCR_ABSORB,
                 ),
             ],
             excludeTexts=[
                 TextMatch(
                     name="领取奖励",
-                    text="领取奖励",
+                    text=OCR_CLAIM_REWARDS,
                 ),
             ],
             action=action if action else Page.error_action
@@ -927,7 +992,7 @@ class PageEventAbstractService(PageEventService, ABC):
                     return True
                 self._check_heal()
                 if self._info.needHeal:
-                    logger.info("有角色阵亡，开始治疗")
+                    logger.info("Um personagem foi derrotado; iniciando a cura")
                     # time.sleep(1)
                     # self._info.lastBossName = "治疗"
                     self.transfer()
@@ -941,7 +1006,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="挑战成功",
-                    text="^挑战成功$",
+                    text=_ocr_exact("挑战成功", "Challenge Complete", "Challenge Completed", "Desafio concluído", "Desafio completado", "Desafio bem-sucedido"),
                 ),
             ],
             action=action if action else Page.error_action
@@ -952,7 +1017,7 @@ class PageEventAbstractService(PageEventService, ABC):
         if action is None:
             def default_action(positions: dict[str, Position]) -> bool:
                 self._info.needHeal = True
-                logger.info("队伍中有角色需要复苏")
+                logger.info("Há um personagem da equipe que precisa ser revivido")
                 self._control_service.esc()
                 return True
 
@@ -963,7 +1028,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="选择复苏物品",
-                    text="选择复苏物品",
+                    text=_ocr_exact("选择复苏物品", "Select a Revival Item", "Selecione um item de reavivamento"),
                 ),
             ],
             action=action if action else Page.error_action
@@ -979,7 +1044,7 @@ class PageEventAbstractService(PageEventService, ABC):
                     self._info.fightTime = datetime.now()
                 if self._context.param_config.autoCombatBeta is True:
                     if self._info.waitBoss:
-                        logger.info("智能连招beta开启")  # 放这里不会频繁打印
+                        logger.info("Combo inteligente beta ativado")  # 放这里不会频繁打印
                         self.boss_wait(self._info.lastBossName)
                     if self.combat_system.resonators is None:
                         self.team_members_ocr()
@@ -1057,7 +1122,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="点击领取今日月相观测卡奖励|claim today's Lunite Subscription reward",
-                    text=r"(点击领取今日月相|Lunite\s*Subscription\s*reward)",
+                    text=r"(?:点击领取今日月相|Lunite\s*Subscription\s*reward|Toque\s*para\s*resgatar.*(?:Assinatura\s*de\s*Lunita|recompensas\s*de\s*hoje))",
                 ),
             ],
             action=action if action else Page.error_action
@@ -1100,15 +1165,15 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="领取奖励",
-                    text="^领取奖励$",
+                    text=OCR_CLAIM_REWARDS,
                 ),
                 TextMatch(
                     name="确认",
-                    text="^确认$",
+                    text=OCR_CONFIRM,
                 ),
                 TextMatch(
                     name="取消",
-                    text="^取消$",
+                    text=OCR_CANCEL,
                 ),
             ],
             action=action if action else Page.error_action
@@ -1165,7 +1230,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 ),
                 TextMatch(
                     name="进入",
-                    text="进入",
+                    text=_ocr_exact("进入", "Enter", "Entrar", "Entre"),
                 ),
             ],
             excludeTexts=[
@@ -1175,7 +1240,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 ),
                 TextMatch(
                     name="快速旅行",
-                    text="快速旅行",
+                    text=OCR_FAST_TRAVEL,
                 ),
             ],
             action=action if action else Page.error_action
@@ -1282,7 +1347,7 @@ class PageEventAbstractService(PageEventService, ABC):
                         continue
                     self._control_service.click(*result.center)
                     time.sleep(0.3)
-                    result = self._ocr_service.find_text("单人挑战")
+                    result = self._ocr_service.find_text(OCR_SOLO_CHALLENGE)
                     if not result:
                         self._control_service.esc()
                         break
@@ -1305,10 +1370,14 @@ class PageEventAbstractService(PageEventService, ABC):
 
                 find_challenge = False
                 for _ in range(2):
-                    result = self._ocr_service.wait_text(["开启挑战", "结晶波片不足"], timeout=3, wait_time=0.3)
+                    result = self._ocr_service.wait_text(
+                        [OCR_START_CHALLENGE, OCR_INSUFFICIENT_WAVEPLATES],
+                        timeout=3,
+                        wait_time=0.3,
+                    )
                     if not result:
                         return False
-                    if challenge := self._ocr_service.search_text([result], "开启挑战"):
+                    if challenge := self._ocr_service.search_text([result], OCR_START_CHALLENGE):
                         find_challenge = True
                         time.sleep(0.3)
                         self._control_service.click(*challenge.center)
@@ -1316,12 +1385,12 @@ class PageEventAbstractService(PageEventService, ABC):
                         self._control_service.click(*challenge.center)
                         time.sleep(0.5)
                         break
-                    elif self._ocr_service.search_text([result], "结晶波片不足"):
-                        result = self._ocr_service.find_text("本次登录不再提示")
+                    elif self._ocr_service.search_text([result], OCR_INSUFFICIENT_WAVEPLATES):
+                        result = self._ocr_service.find_text(OCR_DO_NOT_SHOW_AGAIN)
                         if result:
                             self._control_service.click(*result.center)
                             time.sleep(0.1)
-                        result = self._ocr_service.find_text("^确认$")
+                        result = self._ocr_service.find_text(OCR_CONFIRM)
                         if result:
                             self._control_service.click(*result.center)
                             time.sleep(0.3)
@@ -1331,7 +1400,7 @@ class PageEventAbstractService(PageEventService, ABC):
                     time.sleep(0.5)
                     return False
 
-                logger.info(f"最低推荐等级为{self._info.DungeonWeeklyBossLevel}级")
+                logger.info(f"Nível mínimo recomendado: {self._info.DungeonWeeklyBossLevel}")
                 self._info.waitBoss = True
                 time.sleep(1)
                 self._info.lastFightTime = datetime.now()
@@ -1389,11 +1458,11 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="快速编队|QuickSetup",
-                    text=r"^(快速编队|QuickSetup)$",
+                    text=OCR_QUICK_SETUP,
                 ),
                 TextMatch(
                     name="开启挑战|StartChallenge",
-                    text=r"^(开启挑战|StartChallenge)$",
+                    text=_ocr_exact("开启挑战", "Start Challenge", "StartChallenge", "Iniciar desafio", "Inicie o desafio", "Inicie desafio"),
                 ),
             ],
             action=action if action else Page.error_action
@@ -1441,7 +1510,7 @@ class PageEventAbstractService(PageEventService, ABC):
             targetTexts=[
                 TextMatch(
                     name="交替点击进行挣脱|Click alternately to break free",
-                    text=r"^(交替点击进行挣脱|Click\s*alternately\s*to\s*break\s*free)$",
+                    text=_ocr_exact("交替点击进行挣脱", "Click alternately to break free", "Clique alternadamente para se libertar"),
                 ),
             ],
             action=action if action else Page.error_action
@@ -1546,7 +1615,7 @@ class PageEventAbstractService(PageEventService, ABC):
                         else:
                             self._control_service.fight_tap(tactic)
             except Exception as e:
-                logger.warning(f"释放技能失败: {e}")
+                logger.warning(f"Falha ao usar a habilidade: {e}")
                 continue
 
     def select_role(self, reset_role: bool = False) -> bool:
@@ -1670,7 +1739,7 @@ class PageEventAbstractService(PageEventService, ABC):
             for i in range(max_range):
                 img = self._img_service.screenshot()
 
-                absorb = self._ocr_service.find_text("^吸收$", img, search_region)
+                absorb = self._ocr_service.find_text(OCR_ABSORB, img, search_region)
                 if absorb and self.absorption_and_receive_rewards({}):
                     stop_search = True
                     time.sleep(0.2)
@@ -1734,15 +1803,15 @@ class PageEventAbstractService(PageEventService, ABC):
             # echo_search_config_mapping = {"角": (8, 4, 4, 7)}
 
             if echo_x1 > half_window_width:  # 声骸中在角色右侧
-                logger.info("发现声骸 向右移动")
+                logger.info("Eco encontrado; movendo para a direita")
                 self._control_service.right(0.1)
                 time.sleep(0.05)
             elif echo_x2 < half_window_width:  # 声骸中在角色左侧
-                logger.info("发现声骸 向左移动")
+                logger.info("Eco encontrado; movendo para a esquerda")
                 self._control_service.left(0.1)
                 time.sleep(0.05)
             else:
-                logger.info("发现声骸 向前移动")
+                logger.info("Eco encontrado; movendo para a frente")
                 # self._control_service.up(0.1)
                 # time.sleep(0.01)
                 for _ in range(5):
@@ -1772,7 +1841,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 self._control_service.player().fight_tap(key, 0.05)
             self._control_service.forward_run(sleep_time, key)
             time.sleep(0.75)
-            if self._ocr_service.find_text("^吸收$", None, search_region):
+            if self._ocr_service.find_text(OCR_ABSORB, None, search_region):
                 self.absorption_and_receive_rewards({})
                 return
 
@@ -1794,7 +1863,7 @@ class PageEventAbstractService(PageEventService, ABC):
         dpt = DynamicPointTransformer(self._window_service.get_client_wh())
 
         skip_search = False
-        absorb = self._ocr_service.find_text("^吸收$", None, search_region)
+        absorb = self._ocr_service.find_text(OCR_ABSORB, None, search_region)
         if absorb and self.absorption_and_receive_rewards({}):
             time.sleep(0.2)
             skip_search = True
@@ -1817,7 +1886,7 @@ class PageEventAbstractService(PageEventService, ABC):
             time.sleep(2.5)
             lumen_tower_pos = self._ocr_service.wait_text(r"^(涌明高塔|Lumen\s*Tower)$", timeout=5)
             if not lumen_tower_pos:
-                logger.warning("未找到涌明高塔")
+                logger.warning("Torre do Brilho Crescente não encontrada")
                 self._control_service.esc()
                 time.sleep(2.0)
                 return
@@ -1833,9 +1902,9 @@ class PageEventAbstractService(PageEventService, ABC):
             time.sleep(0.7)
             self._control_service.click(*fenrico_pos)
             time.sleep(0.7)
-            position = self._ocr_service.wait_text(r"^(快速旅行|Fast\s*Travel)$", timeout=5)
+            position = self._ocr_service.wait_text(OCR_FAST_TRAVEL, timeout=5)
             if not position:
-                logger.warning("未找到快速旅行")
+                logger.warning("Viagem rápida não encontrada")
                 self._control_service.esc()
                 time.sleep(0.5)
                 return
@@ -1851,7 +1920,7 @@ class PageEventAbstractService(PageEventService, ABC):
 
                 i = 0
                 while i < 14:
-                    if not self._ocr_service.find_text("^吸收$", None, search_region):
+                    if not self._ocr_service.find_text(OCR_ABSORB, None, search_region):
                         self._control_service.forward_walk(2)
                         i += 1
                         continue
@@ -1868,7 +1937,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 found_restart = False
                 i = 0
                 while i < 9:
-                    restart = self._ocr_service.find_text(r"^(重新挑战|Restart)$", None, search_region)
+                    restart = self._ocr_service.find_text(OCR_RESTART, None, search_region)
                     if restart:
                         found_restart = True
                         time.sleep(0.3)
@@ -1887,7 +1956,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 if not fenrico_pos:
                     self._control_service.scroll_mouse(-1)
                     time.sleep(0.5)
-                    logger.info("重新挑战")
+                    logger.info("Desafiando novamente")
                     self._control_service.pick_up()
                     time.sleep(3.6)
                 # 跑去打boss
@@ -1921,7 +1990,7 @@ class PageEventAbstractService(PageEventService, ABC):
         time.sleep(2.5)
         map_text_pos = self._ocr_service.wait_text(r"^(彻地之.?|Earthrend\s*Wedge)$", timeout=5)
         if not map_text_pos:
-            logger.warning("未找到彻地之楔")
+            logger.warning("Nexo de teleporte não encontrado")
             self._control_service.esc()
             time.sleep(2.0)
             return
@@ -1938,9 +2007,9 @@ class PageEventAbstractService(PageEventService, ABC):
         time.sleep(0.7)
         self._control_service.click(*boss_pos)
         time.sleep(0.7)
-        position = self._ocr_service.wait_text(r"^(快速旅行|Fast\s*Travel)$", timeout=5)
+        position = self._ocr_service.wait_text(OCR_FAST_TRAVEL, timeout=5)
         if not position:
-            logger.warning("未找到快速旅行")
+            logger.warning("Viagem rápida não encontrada")
             self._control_service.esc()
             time.sleep(0.5)
             return
@@ -1956,7 +2025,7 @@ class PageEventAbstractService(PageEventService, ABC):
         found_restart = False
         i = 0
         while i < 12:
-            restart = self._ocr_service.find_text(r"^(重新挑战|Restart)$", None, search_region)
+            restart = self._ocr_service.find_text(OCR_RESTART, None, search_region)
             if restart:
                 found_restart = True
                 time.sleep(0.3)
@@ -1970,7 +2039,7 @@ class PageEventAbstractService(PageEventService, ABC):
 
         self._control_service.scroll_mouse(-1)
         time.sleep(0.5)
-        logger.info("重新挑战")
+        logger.info("Desafiando novamente")
         self._control_service.pick_up()
         time.sleep(2.0)
 
@@ -1996,7 +2065,7 @@ class PageEventAbstractService(PageEventService, ABC):
             )
         )
 
-        if self._ocr_service.find_text("领取奖励", position=position):
+        if self._ocr_service.find_text(OCR_CLAIM_REWARDS, position=position):
             self._control_service.pick_up()
             # logger.info("模拟领取奖励(实际未领取仅关闭小窗)")
             # logger.info("模拟领取奖励(实际未领取仅关闭小窗)")
@@ -2033,7 +2102,7 @@ class PageEventAbstractService(PageEventService, ABC):
             for i in range(max_range):
                 img = self._img_service.screenshot()
 
-                if self._ocr_service.find_text("领取奖励", img=img, position=position):
+                if self._ocr_service.find_text(OCR_CLAIM_REWARDS, img=img, position=position):
                     self._control_service.pick_up()
                     # logger.info("模拟领取奖励(实际未领取仅关闭小窗)")
                     # logger.info("模拟领取奖励(实际未领取仅关闭小窗)")
@@ -2106,15 +2175,15 @@ class PageEventAbstractService(PageEventService, ABC):
             # echo_search_config_mapping = {"角": (8, 4, 4, 7)}
 
             if echo_x1 > half_window_width:  # 声骸中在角色右侧
-                logger.info("发现声骸 向右移动")
+                logger.info("Eco encontrado; movendo para a direita")
                 self._control_service.right(0.1)
                 time.sleep(0.05)
             elif echo_x2 < half_window_width:  # 声骸中在角色左侧
-                logger.info("发现声骸 向左移动")
+                logger.info("Eco encontrado; movendo para a esquerda")
                 self._control_service.left(0.1)
                 time.sleep(0.05)
             else:
-                logger.info("发现声骸 向前移动")
+                logger.info("Eco encontrado; movendo para a frente")
                 for _ in range(5):
                     self._control_service.up(0.1)
                     time.sleep(0.05)
@@ -2122,34 +2191,36 @@ class PageEventAbstractService(PageEventService, ABC):
 
     def transfer(self) -> bool:
         if self._boss_info_service.is_nightmare(self._info.lastBossName):
-            logger.info("治疗次数：%s", self._info.healCount)
+            logger.info("Curas: %s", self._info.healCount)
         elif self._boss_info_service.is_auto_pickup(self._info.lastBossName):
-            logger.info("战斗次数：%s 治疗次数：%s", self._info.fightCount, self._info.healCount)
+            logger.info("Combates: %s; curas: %s", self._info.fightCount, self._info.healCount)
         else:
-            logger.info("战斗次数：%s 吸收次数：%s 治疗次数：%s", self._info.fightCount,
+            logger.info("Combates: %s; absorções: %s; curas: %s", self._info.fightCount,
                         self._info.absorptionCount, self._info.healCount)
         self._info.isCheckedHeal = False
         if self._config.CharacterHeal and self._info.needHeal:  # 检查是否需要治疗
-            logger.info("有角色阵亡，开始治疗")
+            logger.info("Um personagem foi derrotado; iniciando a cura")
             time.sleep(1)
 
             # logger.info(f"self._info.lastBossName: {self._info.lastBossName}")
             if self._info.lastBossName == BossNameEnum.NightmareHecate.value:
                 self._control_service.esc()
                 time.sleep(1)
-                position = self._ocr_service.find_text("^确认$")
+                position = self._ocr_service.find_text(OCR_CONFIRM)
                 if position:
                     self.click_position(position)
                     time.sleep(3)
                     self.wait_home()
                     self._info.needHeal = False
                     self._info.healCount += 1
-                    logger.info(f"{self._info.lastBossName}副本结束")
+                    logger.info(f"Instância {self._info.lastBossName} concluída")
                     time.sleep(2)
-                    position = self._ocr_service.find_text("^进入梦.?领域$")
+                    position = self._ocr_service.find_text(
+                        r'^(?:进入梦.?领域|Enter.*Dream.*Realm|Entrar no reino do Pesadelo)$'
+                    )
                     if position:
                         self._control_service.pick_up()
-                        logger.info("进入梦魇领域")
+                        logger.info("Entrando no Domínio do Pesadelo")
                         time.sleep(1.5)
                         self._control_service.pick_up()
                         time.sleep(1.5)
@@ -2173,7 +2244,7 @@ class PageEventAbstractService(PageEventService, ABC):
         time.sleep(0.2)
 
         if len(self._config.TargetBoss) == 1 and bossName == BossNameEnum.LadyOfTheSea.value:
-            if self._ocr_service.find_text(r"^(进入.*最终章.*)$"):
+            if self._ocr_service.find_text(r'^(?:进入.*最终章.*|Enter.*Final Chapter.*|Entrar em "O Final")$'):
                 self._control_service.pick_up()
                 self._info.in_dungeon = True
 
@@ -2187,9 +2258,12 @@ class PageEventAbstractService(PageEventService, ABC):
 
         self._control_service.guidebook()
         time.sleep(1)
-        if not self._ocr_service.wait_text(["日志", "活跃", "挑战", "强者", "残象", "周期", "探寻", "漂泊", "素材获取"],
+        if not self._ocr_service.wait_text(
+                ["日志", "活跃", "挑战", "强者", "残象", "周期", "探寻", "漂泊", "素材获取",
+                 "Guidebook", "Activity", "Challenge", "Echo", "Recurring", "Materials",
+                 "Guia", "Atividade", "Desafio", "Eco", "Recorrente", "Locais de Materiais"],
                                            timeout=7):
-            logger.warning("未进入索拉指南")
+            logger.warning("Não foi possível abrir o Guia de Solaris")
             self._control_service.esc()
             self._info.lastFightTime = datetime.now()
             return False
@@ -2202,10 +2276,10 @@ class PageEventAbstractService(PageEventService, ABC):
         if skip_map is False:
             self._control_service.map()
         time.sleep(3)
-        toggle_map = self._ocr_service.wait_text("切换地图")
+        toggle_map = self._ocr_service.wait_text(OCR_SWITCH_MAP)
         if not toggle_map:
             self._control_service.esc()
-            logger.info("未找到切换地图")
+            logger.info("Opção de trocar mapa não encontrada")
             return False
         try:
             # tmp_x = int((toggle_map.x1 + toggle_map.x2) // 2)
@@ -2215,7 +2289,7 @@ class PageEventAbstractService(PageEventService, ABC):
             huanglong_text = self._ocr_service.wait_text("瑝?珑")
             if not huanglong_text:
                 self._control_service.esc()
-                logger.info("未找到瑝珑")
+                logger.info("Huanglong não encontrado")
                 return False
             self.click_position(huanglong_text)
             time.sleep(0.5)
@@ -2230,7 +2304,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 jzcj_pos = self._ocr_service.wait_text("今州城界")
                 if not jzcj_pos:
                     self._control_service.esc()
-                    logger.info("未找到今州城界")
+                    logger.info("Fronteira de Jinzhou não encontrada")
                     return False
                 dpt = DynamicPointTransformer(self._window_service.get_client_wh())
                 jzcj_pos_1280_720 = dpt.untransform((jzcj_pos.x1, jzcj_pos.y1), AlignEnum.CENTER)
@@ -2239,14 +2313,14 @@ class PageEventAbstractService(PageEventService, ABC):
                 self._control_service.click(*jinzhou_resonance_nexus)
                 time.sleep(2)
 
-                if transfer := self._ocr_service.wait_text("快速旅行"):
+                if transfer := self._ocr_service.wait_text(OCR_FAST_TRAVEL):
                     self.click_position(transfer)
                     time.sleep(0.1)
                     self.click_position(transfer)
-                    logger.info("治疗_等待传送完成")
+                    logger.info("Cura: aguardando a conclusão do teleporte")
                     time.sleep(3)
                     self.wait_home()  # 等待回到主界面
-                    logger.info("治疗_传送完成")
+                    logger.info("Cura: teleporte concluído")
                     now = datetime.now()
                     self._info.idleTime = now  # 重置空闲时间
                     self._info.lastFightTime = now  # 重置最近检测到战斗时间
@@ -2255,11 +2329,11 @@ class PageEventAbstractService(PageEventService, ABC):
                     self._info.healCount += 1
                     return True
         except Exception:
-            logger.exception(f"前往复活点过程中出现异常")
+            logger.exception("Erro ao viajar até o ponto de renascimento")
             self._control_service.activate()
             for i in range(3):
                 time.sleep(2.5)
-                toggle_map = self._ocr_service.find_text("切换地图")
+                toggle_map = self._ocr_service.find_text(OCR_SWITCH_MAP)
                 if toggle_map:
                     self._control_service.esc()
                     continue
@@ -2268,8 +2342,8 @@ class PageEventAbstractService(PageEventService, ABC):
         return False
 
     def absorption_and_receive_rewards2(self, positions: dict[str, Position]) -> bool:
-        if self._ocr_service.find_text("吸收"):
-            logger.info("模拟吸收声骸")
+        if self._ocr_service.find_text(OCR_ABSORB):
+            logger.info("Simulando a absorção do Eco")
             return True
         return False
 
@@ -2288,7 +2362,7 @@ class PageEventAbstractService(PageEventService, ABC):
         while count < max_ocr or need_retry:
             img = self._img_service.screenshot()
             results = self._ocr_service.ocr(img, search_region)
-            absorption = self._ocr_service.search_text(results, "^吸收$")
+            absorption = self._ocr_service.search_text(results, OCR_ABSORB)
 
             # 没有吸收，再试一次
             if not absorption:
@@ -2297,9 +2371,9 @@ class PageEventAbstractService(PageEventService, ABC):
                 need_retry = True
                 continue
 
-            receive_reward = self._ocr_service.search_text(results, r"^领取奖励$")
+            receive_reward = self._ocr_service.search_text(results, OCR_CLAIM_REWARDS)
             # 部分boss可以重新挑战
-            restart = self._ocr_service.search_text(results, r"^重新挑战$")
+            restart = self._ocr_service.search_text(results, OCR_RESTART)
             # 有吸收和领取奖励，吸收在下则滚动到下方
             if receive_reward:
                 logger.debug(f"absorption: {absorption}, receive_reward: {receive_reward}")
@@ -2315,7 +2389,7 @@ class PageEventAbstractService(PageEventService, ABC):
                         break
                 if absorption_index > 0:
                     for _ in range(absorption_index):
-                        logger.info("向下滚动")
+                        logger.info("Rolando para baixo")
                         self._control_service.scroll_mouse(-1)
                         time.sleep(0.5)
 
@@ -2323,13 +2397,13 @@ class PageEventAbstractService(PageEventService, ABC):
             self._control_service.pick_up()
             time.sleep(2)
             if self._ocr_service.find_text(["确认", "收取物资"]):
-                logger.info("点击到领取奖励，关闭页面")
+                logger.info("Resgate de recompensas acionado; fechando a tela")
                 self._control_service.esc()
                 time.sleep(2)
 
         if count == 0:
             return False
-        logger.info("吸收声骸")
+        logger.info("Absorvendo o Eco")
         if self._info.fightCount is None or self._info.fightCount == 0:
             self._info.fightCount = 1
             self._info.absorptionCount = 1
@@ -2340,7 +2414,7 @@ class PageEventAbstractService(PageEventService, ABC):
         absorption_rate = self._info.absorptionCount / self._info.fightCount
         # 自动拾取的统计不准，不打印
         if not self._boss_info_service.is_auto_pickup(self._info.lastBossName):
-            logger.info("目前声骸吸收率为：%s", str(format(absorption_rate * 100, ".2f")))
+            logger.info("Taxa atual de absorção de Ecos: %s", str(format(absorption_rate * 100, ".2f")))
         return True
 
     def transfer_to_boss(self, bossName):
@@ -2364,7 +2438,9 @@ class PageEventAbstractService(PageEventService, ABC):
         ]:
             self._control_service.click(*materialsSpotsSidebar)
             time.sleep(0.6)
-            weeklyChallenge = self._ocr_service.wait_text(r"^(战歌重奏)$")
+            weeklyChallenge = self._ocr_service.wait_text(
+                _ocr_exact("战歌重奏", "Weekly Challenge", "Desafio Semanal")
+            )
             if weeklyChallenge:
                 self._control_service.click(*weeklyChallenge.center)
                 time.sleep(0.2)
@@ -2378,7 +2454,7 @@ class PageEventAbstractService(PageEventService, ABC):
                     go_list.sort(key=lambda x: x.y1)
                     self._control_service.click(*go_list[0].center)
                     time.sleep(0.3)
-                    story = self._ocr_service.wait_text(r"^确认$", timeout=2)
+                    story = self._ocr_service.wait_text(OCR_CONFIRM, timeout=2)
                     if story:
                         self._control_service.click(*story.center)
                         time.sleep(0.1)
@@ -2393,7 +2469,7 @@ class PageEventAbstractService(PageEventService, ABC):
                     self._info.waitBoss = True
                     return True
 
-            logger.warning(f"未找到：{bossName}")
+            logger.warning(f"Não encontrado: {bossName}")
             self._control_service.esc()
             return False
         elif bossName in [
@@ -2402,7 +2478,9 @@ class PageEventAbstractService(PageEventService, ABC):
         ]:
             self._control_service.click(*materialsSpotsSidebar)
             time.sleep(0.6)
-            weeklyChallenge = self._ocr_service.wait_text(r"^讨伐强敌$")
+            weeklyChallenge = self._ocr_service.wait_text(
+                _ocr_exact("讨伐强敌", "Boss Challenge", "Desafio de Chefe", "Desafio de chefe")
+            )
             if weeklyChallenge:
                 self._control_service.click(*weeklyChallenge.center)
                 time.sleep(0.2)
@@ -2416,7 +2494,7 @@ class PageEventAbstractService(PageEventService, ABC):
                     go_list.sort(key=lambda x: x.y1)
                     self._control_service.click(*go_list[0].center)
                     time.sleep(0.3)
-                    story = self._ocr_service.wait_text(r"^确认$", timeout=2)
+                    story = self._ocr_service.wait_text(OCR_CONFIRM, timeout=2)
                     if story:
                         self._control_service.click(*story.center)
                         time.sleep(0.1)
@@ -2431,7 +2509,7 @@ class PageEventAbstractService(PageEventService, ABC):
                     self._info.waitBoss = True
                     return True
 
-            logger.warning(f"未找到：{bossName}")
+            logger.warning(f"Não encontrado: {bossName}")
             self._control_service.esc()
             return False
 
@@ -2440,23 +2518,32 @@ class PageEventAbstractService(PageEventService, ABC):
             self._control_service.click(*enemyTracingPoint)  # 进入残像探寻
 
             enemy_tracing_or_path_of_growth_pos = self._ocr_service.wait_text(
-                r"^(敌迹探寻|Enemy\s*Tracing|探测|Detect|强者之路|Path\s*of\s*Growth|全息战略)$")
+                _ocr_exact(
+                    "敌迹探寻", "Enemy Tracing", "Rastreamento de Inimigo",
+                    "探测", "Detect", "Detectar", "Rastrear",
+                    "强者之路", "Path of Growth", "Caminho do crescimento",
+                    "全息战略", "Tactical Hologram", "Holograma Tático",
+                )
+            )
 
             if not enemy_tracing_or_path_of_growth_pos:
                 break
 
             img = self._img_service.screenshot()
             results = self._ocr_service.ocr(img)
-            enemy_tracing_pos = self._ocr_service.search_texts(results, r"^(敌迹探寻|Enemy\s*Tracing|探测|Detect)$")
+            enemy_tracing_pos = self._ocr_service.search_texts(
+                results,
+                _ocr_exact("敌迹探寻", "Enemy Tracing", "Rastreamento de Inimigo", "探测", "Detect", "Detectar", "Rastrear"),
+            )
             if enemy_tracing_pos:
                 is_enemy_tracing = True
                 break
 
         if not is_enemy_tracing:
-            logger.warning("未进入残象探寻")
+            logger.warning("Não foi possível abrir a busca de inimigos")
             self._control_service.esc()
             return False
-        logger.info(f"当前目标boss：{bossName}")
+        logger.info(f"Chefe alvo atual: {bossName}")
         boss_name_reg_mapping = {
             "哀声鸷": "[哀袁]声.?",
             "辉萤军势": "辉.军势",
@@ -2482,9 +2569,9 @@ class PageEventAbstractService(PageEventService, ABC):
         if self._boss_info_service.is_nightmare(bossName) or bossName in [BossNameEnum.ThrenodianLeviathan.value]:
             search_boss_name = bossName[:2] + "." + bossName[2:]
 
-        search_tips_pos = self._ocr_service.wait_text("输入搜索内容")
+        search_tips_pos = self._ocr_service.wait_text(OCR_SEARCH)
         if not search_tips_pos:
-            logger.warning("识别输入框失败")
+            logger.warning("Não foi possível reconhecer o campo de pesquisa")
             self._control_service.esc()
             return False
 
@@ -2518,7 +2605,7 @@ class PageEventAbstractService(PageEventService, ABC):
 
         if not findBoss:
             self._control_service.esc()
-            logger.warning("未找到目标boss")
+            logger.warning("Chefe alvo não encontrado")
             return False
 
         self._control_service.click(findBoss.x1, findBoss.y1)
@@ -2526,20 +2613,20 @@ class PageEventAbstractService(PageEventService, ABC):
         self.click_position(findBoss)
 
         time.sleep(1)
-        detection_text = self._ocr_service.wait_text("^探测$", timeout=5)
+        detection_text = self._ocr_service.wait_text(OCR_DETECT, timeout=5)
         if not detection_text:
             self._control_service.esc()
             return False
         time.sleep(1)
         self.click_position(detection_text)
         time.sleep(2.5)
-        if transfer := self._ocr_service.wait_text("^快速旅行$", timeout=5):
+        if transfer := self._ocr_service.wait_text(OCR_FAST_TRAVEL, timeout=5):
             time.sleep(0.5)
             self.click_position(transfer)
-            logger.info("等待传送完成")
+            logger.info("Aguardando a conclusão do teleporte")
             time.sleep(1.5)
             self.wait_home()  # 等待回到主界面
-            logger.info("传送完成")
+            logger.info("Teleporte concluído")
             self._control_service.activate()
 
             if bossName == BossNameEnum.Lorelei.value:
@@ -2610,10 +2697,10 @@ class PageEventAbstractService(PageEventService, ABC):
 
                         # 吸收与奖励重叠时
                         results = self._ocr_service.ocr(img, search_region)
-                        absorption = self._ocr_service.search_text(results, "^吸收$")
-                        receive_reward = self._ocr_service.search_text(results, r"^领取奖励$")
+                        absorption = self._ocr_service.search_text(results, OCR_ABSORB)
+                        receive_reward = self._ocr_service.search_text(results, OCR_CLAIM_REWARDS)
                         # 部分boss可以重新挑战
-                        restart = self._ocr_service.search_text(results, r"^重新挑战$")
+                        restart = self._ocr_service.search_text(results, OCR_RESTART)
                         is_pick_up_echo = False
                         # 有吸收和领取奖励，吸收在下则滚动到下方
                         if absorption and receive_reward:
@@ -2630,7 +2717,7 @@ class PageEventAbstractService(PageEventService, ABC):
                                     break
                             if absorption_index > 0:
                                 for _ in range(absorption_index):
-                                    logger.info("向下滚动")
+                                    logger.info("Rolando para baixo")
                                     self._control_service.scroll_mouse(-1)
                                     time.sleep(0.5)
                             is_pick_up_echo = True
@@ -2652,7 +2739,7 @@ class PageEventAbstractService(PageEventService, ABC):
                         time.sleep(0.6)
                         self._control_service.scroll_mouse(-1)
                         time.sleep(0.6)
-                        logger.info("重新挑战")
+                        logger.info("Desafiando novamente")
                         self._control_service.pick_up()
                         time.sleep(3.0)
                         break
@@ -2662,7 +2749,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 route_step_action(after_restart_routes.get(bossName))
 
             if bossName == BossNameEnum.NightmareAdamSmasher.value:
-                if self._ocr_service.find_text("^进入$"):
+                if self._ocr_service.find_text(OCR_ENTER):
                     self._control_service.pick_up()
                     self._info.in_dungeon = True
                 else:
@@ -2676,7 +2763,7 @@ class PageEventAbstractService(PageEventService, ABC):
             self._info.waitBoss = True
             return True
         else:
-            logger.warning("未找到快速旅行, 可能未解锁boss传送")
+            logger.warning("Viagem rápida não encontrada; o teleporte do chefe pode não estar desbloqueado")
         self._control_service.esc()
         return False
 
@@ -2686,10 +2773,13 @@ class PageEventAbstractService(PageEventService, ABC):
         find_sit_and_wait_text = self._ocr_service.find_text(["坐上椅子等待", "坐上椅子", "的到来"])
         if not find_sit_and_wait_text:
             return
-        logger.info("罗蕾莱不在家，等她")
+        logger.info("Lorelei não está disponível; aguardando")
         self._control_service.esc()
         time.sleep(2)
-        if not self._ocr_service.wait_text(r"^(终端|Terminal|商城|教程百科|Tutorials)$", timeout=5):
+        if not self._ocr_service.wait_text(
+                _ocr_exact("终端", "Terminal", "商城", "Shop", "Loja", "教程百科", "Tutorials", "Ficha Técnica"),
+                timeout=5,
+        ):
             self._control_service.esc()
             return
         # 进入时钟
@@ -2697,9 +2787,11 @@ class PageEventAbstractService(PageEventService, ABC):
         terminal_clock = dpt.transform((915, 686), AlignEnum.BUTTON_RIGHT)
         self._control_service.click(*terminal_clock)
         time.sleep(2)
-        tomorrow = self._ocr_service.wait_text(r"^次日$", timeout=5)
+        tomorrow = self._ocr_service.wait_text(
+            _ocr_exact("次日", "Next day", "Próximo dia", "Amanhã"), timeout=5
+        )
         if not tomorrow:
-            logger.warning("未找到次日")
+            logger.warning("Opção de avançar para o dia seguinte não encontrada")
             self._control_service.esc()
             return
         self.click_position(tomorrow)
@@ -2715,13 +2807,16 @@ class PageEventAbstractService(PageEventService, ABC):
         self._control_service.click(*next_clock)
         time.sleep(0.3)
 
-        confirm_text = self._ocr_service.find_text("确定")
+        confirm_text = self._ocr_service.find_text(OCR_CONFIRM)
         self.click_position(confirm_text)
         time.sleep(2)
-        self._ocr_service.wait_text("时间", timeout=10)
+        self._ocr_service.wait_text(_ocr_exact("时间", "Time", "Tempo", "Definir horário", "Hora:"), timeout=10)
         time.sleep(1)
         self._control_service.esc()
-        self._ocr_service.wait_text(r"^(终端|Terminal|商城|教程百科|Tutorials)$", timeout=5)
+        self._ocr_service.wait_text(
+            _ocr_exact("终端", "Terminal", "商城", "Shop", "Loja", "教程百科", "Tutorials", "Ficha Técnica"),
+            timeout=5,
+        )
         time.sleep(1)
         self._control_service.esc()
         time.sleep(0.5)
@@ -2743,7 +2838,7 @@ class PageEventAbstractService(PageEventService, ABC):
             self._control_service.toggle_team_member(role_index + 1)
             time.sleep(0.2)
         # position = Position.build(325, 190, 690, 330)
-        if self._ocr_service.wait_text("选择复苏物品", timeout=2):
+        if self._ocr_service.wait_text(OCR_SELECT_REVIVAL_ITEM, timeout=2):
             logger.debug("检测到角色需要复苏")
             self._info.needHeal = True
             self._control_service.esc()
@@ -2803,7 +2898,7 @@ class PageEventAbstractService(PageEventService, ABC):
 
         # 卡在加载，强制关闭
         self._window_service.close_window()
-        raise Exception("等待回到主界面超时")
+        raise Exception("Tempo esgotado ao aguardar o retorno à tela principal")
         return False
 
     def __wait_home(self, timeout=120) -> bool:
@@ -2822,7 +2917,7 @@ class PageEventAbstractService(PageEventService, ABC):
             # 修复部分情况下导致无法退出该循环的问题。
             if (datetime.now() - start).seconds > timeout:
                 self._window_service.close_window()
-                raise Exception("等待回到主界面超时")
+                raise Exception("Tempo esgotado ao aguardar o retorno à tela principal")
             img = self._img_service.screenshot()
             if img is None:
                 time.sleep(0.3)
@@ -2834,7 +2929,7 @@ class PageEventAbstractService(PageEventService, ABC):
 
             # is_ok = False
             results = self._ocr_service.ocr(cropped_img)
-            text_result = self._ocr_service.search_text(results, "快速旅行")
+            text_result = self._ocr_service.search_text(results, OCR_FAST_TRAVEL)
             if text_result:
                 text_result.confidence = text_result.confidence
                 # logger.debug("Match text: Fast Travel, %s", text_result)
@@ -2874,7 +2969,7 @@ class PageEventAbstractService(PageEventService, ABC):
         elif search_type == "reward":
             return self._od_service.search_reward(img)
         else:
-            raise NotImplemented("未实现的搜索方式")
+            raise NotImplemented("Método de pesquisa não implementado")
 
     def search_echo(self):
         # img = self._img_service.screenshot()
@@ -2910,7 +3005,7 @@ class PageEventAbstractService(PageEventService, ABC):
 
             if echo_box is None:
                 if time.monotonic() - start_time > min_search_seconds:
-                    logger.info("未发现声骸")
+                    logger.info("Nenhum Eco encontrado")
                     return
                 time.sleep(0.3)
                 continue
@@ -2927,15 +3022,15 @@ class PageEventAbstractService(PageEventService, ABC):
             # echo_search_config_mapping = {"角": (8, 4, 4, 7)}
 
             if echo_x1 * 0.9 > half_window_width:  # 声骸中在角色右侧
-                logger.info("发现声骸 向右移动")
+                logger.info("Eco encontrado; movendo para a direita")
                 self._control_service.right(0.1)
                 time.sleep(0.05)
             elif echo_x2 * 1.1 < half_window_width:  # 声骸中在角色左侧
-                logger.info("发现声骸 向左移动")
+                logger.info("Eco encontrado; movendo para a esquerda")
                 self._control_service.left(0.1)
                 time.sleep(0.05)
             else:
-                logger.info("发现声骸 向前移动")
+                logger.info("Eco encontrado; movendo para a frente")
                 # self._control_service.up(0.1)
                 # time.sleep(0.01)
                 for _ in range(5):
@@ -2949,12 +3044,16 @@ class PageEventAbstractService(PageEventService, ABC):
         if team_pos is None:
             self._control_service.esc()
             time.sleep(1.5)
-            self._ocr_service.wait_text(["^确认离开", "^确认$", "^编队$", "^终端$", "^活动$"])
+            self._ocr_service.wait_text(
+                [_ocr_exact("确认离开", "Leave this domain", "Sair deste domínio"), OCR_CONFIRM, OCR_TEAM, OCR_TERMINAL, OCR_EVENTS]
+            )
             time.sleep(0.8)
             img = self._img_service.screenshot()
             ocr_results = self._ocr_service.ocr(img)
-            confirm_leave_pos = self._ocr_service.search_text(ocr_results, "^确认离开")
-            confirm_pos = self._ocr_service.search_text(ocr_results, "^确认$")
+            confirm_leave_pos = self._ocr_service.search_text(
+                ocr_results, _ocr_exact("确认离开", "Leave this domain", "Sair deste domínio")
+            )
+            confirm_pos = self._ocr_service.search_text(ocr_results, OCR_CONFIRM)
             if confirm_leave_pos and confirm_pos:
                 self._control_service.click(*confirm_pos.center)
                 time.sleep(3)
@@ -2968,13 +3067,13 @@ class PageEventAbstractService(PageEventService, ABC):
                 self._control_service.esc()
                 time.sleep(1.5)
 
-        team_pos = self._ocr_service.wait_text("^编队$")
+        team_pos = self._ocr_service.wait_text(OCR_TEAM)
         if team_pos:
-            logger.info("识别编队")
+            logger.info("Reconhecendo a equipe")
             time.sleep(0.6)
             self._control_service.click(*team_pos.center)
             time.sleep(1)
-            quick_setup_pos = self._ocr_service.wait_text("^快速编队$")
+            quick_setup_pos = self._ocr_service.wait_text(OCR_QUICK_SETUP)
             if quick_setup_pos:
                 img = self._img_service.screenshot()
                 # ocr_results = self._ocr_service.ocr(img)
@@ -3032,9 +3131,9 @@ class PageEventAbstractService(PageEventService, ABC):
                             continue
                         members_info[i][1] = text_box
                         # 通过名称匹配这个位置的角色名
-                        enum_obj = ResonatorNameEnum.get_enum_by_ocr_text(text_box.text)
-                        # 角色名都对不上，默认为主角
-                        members_info[i][0] = enum_obj.value if enum_obj else ResonatorNameEnum.rover.value
+                        members_info[i][0] = resolve_resonator_ocr_name(
+                            text_box.text, self._window_service.get_lang()
+                        )
                         team_members[i] = members_info[i][0]
                         # logger.debug(f"team_members[{i}]: {team_members[i]}")
 
@@ -3045,7 +3144,7 @@ class PageEventAbstractService(PageEventService, ABC):
                 self._control_service.esc()
                 time.sleep(3)
             else:
-                logger.info("编队已锁定")
+                logger.info("Equipe bloqueada")
                 w, h = self._window_service.get_client_wh()
 
                 def _find_pos(pos_list):
@@ -3062,7 +3161,7 @@ class PageEventAbstractService(PageEventService, ABC):
 
                 img = self._img_service.screenshot()
                 results = self._ocr_service.ocr(img)
-                map_pos_list = self._ocr_service.search_texts(results, "^(地图|Map)$")
+                map_pos_list = self._ocr_service.search_texts(results, OCR_MAP)
                 map_pos = _find_pos(map_pos_list)
                 if not map_pos:
                     next_pos = (1197, 350)
@@ -3070,7 +3169,7 @@ class PageEventAbstractService(PageEventService, ABC):
                     next_pos = dpt.transform(next_pos, AlignEnum.CENTER_RIGHT)
                     self._control_service.click(*next_pos)
                     time.sleep(0.5)
-                    map_pos_list = self._ocr_service.wait_text("^(地图|Map)$")
+                    map_pos_list = self._ocr_service.wait_text(OCR_MAP)
                     map_pos = _find_pos(map_pos_list)
 
                 if map_pos:
@@ -3079,7 +3178,7 @@ class PageEventAbstractService(PageEventService, ABC):
                     self._transfer_to_heal(skip_map=True)
                     return
                 else:
-                    logger.info("未找到地图")
+                    logger.info("Mapa não encontrado")
 
     def get_dialogue_region(self) -> Position:
         dpt = DynamicPointTransformer(self._window_service.get_client_wh())

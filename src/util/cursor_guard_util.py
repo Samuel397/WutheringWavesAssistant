@@ -59,7 +59,7 @@ def set_pos(x, y):
 
 def run(event, **kwargs):
     try:
-        logger.info("cursor guard started")
+        logger.info("Proteção do cursor iniciada")
 
         hwnd_util.enable_dpi_awareness()
 
@@ -129,4 +129,4 @@ def run(event, **kwargs):
     except Exception as e:
         logger.exception(e)
     finally:
-        logger.info("cursor guard finished")
+        logger.info("Proteção do cursor encerrada")

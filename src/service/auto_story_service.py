@@ -10,7 +10,7 @@ from src.core.i18n import Language
 from src.core.interface import ControlService, OCRService, ImgService, WindowService, ODService, BossInfoService
 from src.core.pages import Page, Position, TextMatch, ConditionalAction, ImageMatch
 from src.core.regions import DynamicPosition, TextPosition
-from src.service.page_event_service import PageEventAbstractService
+from src.service.page_event_service import OCR_CONFIRM, OCR_DO_NOT_SHOW_AGAIN, PageEventAbstractService, _ocr_exact
 from src.util.wrap_util import timeit
 
 logger = logging.getLogger(__name__)
@@ -176,7 +176,7 @@ class AutoStoryServiceImpl(PageEventAbstractService):
     def page_action(page: Page, src_img: np.ndarray, img: np.ndarray, ocr_results: list[TextPosition]) -> bool:
         if not page.is_match(src_img, img, ocr_results):
             return False
-        logger.info("当前页面：%s", page.name)
+        logger.info("Página atual: %s", page.name)
         page.action(page.matchPositions)
         return True
 
@@ -237,7 +237,7 @@ class AutoStoryServiceImpl(PageEventAbstractService):
             targetTexts=[
                 TextMatch(
                     name="跳过|SKIP",
-                    text=r"^(跳过|S?KI[PE].{0,3})",
+                    text=r"^(?:跳过|S?KI[PE].{0,3}|PULAR|Pular|Ignorar)$",
                     open_position=False, # 已在ocr时裁剪了图片，匹配文本时不再限制区域
                     position=DynamicPosition(
                         rate=(
@@ -266,11 +266,11 @@ class AutoStoryServiceImpl(PageEventAbstractService):
             targetTexts=[
                 TextMatch(
                     name="继续观看",
-                    text=r"^继续观看$",
+                    text=_ocr_exact("继续观看", "Continue watching", "Continuar assistindo", "Continuar"),
                 ),
                 TextMatch(
                     name="跳过剧情",
-                    text=r"^跳过剧情$",
+                    text=_ocr_exact("跳过剧情", "Skip story", "Pular história"),
                 ),
             ],
             action=skip_story_synopsis_action,
@@ -292,15 +292,15 @@ class AutoStoryServiceImpl(PageEventAbstractService):
             targetTexts=[
                 TextMatch(
                     name="完整观看剧情",
-                    text="完整观看剧情.*是否确认跳过",
+                    text=r"(?:完整观看剧情.*是否确认跳过|Watch.*full story.*confirm.*skip|assistir.*história.*confirma.*pular)",
                 ),
                 TextMatch(
                     name="确认",
-                    text="^确认$",
+                    text=OCR_CONFIRM,
                 ),
                 TextMatch(
                     name="本次登录不再提示",
-                    text="本次登录不再提示",
+                    text=OCR_DO_NOT_SHOW_AGAIN,
                 ),
             ],
             action=skip_confirm_page_action,

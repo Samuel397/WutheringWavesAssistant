@@ -1,3 +1,17 @@
+# Edição PT-BR (base v3.5.7 Alpha)
+
+- Interface traduzida para português do Brasil.
+- Português adicionado como idioma do jogo, com reconhecimento OCR latino.
+- Textos, páginas, tarefas e nomes oficiais do jogo mapeados para PT-BR.
+- Documentação técnica disponibilizada em português.
+
+---
+
+## Histórico oficial do projeto
+
+> O histórico abaixo é preservado no idioma original para manter com exatidão os nomes e as notas publicadas pelo projeto upstream.
+
+
 v3.5.7 Alpha  
 每日任务支持刷幻梦游园·狂想  
 优化探索自动战斗  

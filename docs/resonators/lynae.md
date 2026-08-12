@@ -1,140 +1,140 @@
-# 琳奈 (Lynae) - 连招逻辑分析
+# Lynae — análise da lógica de combos
 
-## 基本信息
+## Informações básicas
 
-| 属性 | 值 |
+| Campo | Valor |
 |------|------|
-| 角色名称 | 琳奈 (Lynae) |
-| 角色定位 | Support（辅助） |
-| 元素属性 | 衍射 (Spectro) |
-| 协奏类型 | 黄圈 (concerto_spectro) |
-| 版本 | v3.0 |
-| 源文件 | `src/core/combat/resonator/lynae.py` |
+| Ressonador | Lynae |
+| Função | Support (Suporte) |
+| Atributo | Spectro |
+| Tipo de Concerto | Círculo amarelo (`concerto_spectro`) |
+| Versão | v3.0 |
+| Arquivo-fonte | `src/core/combat/resonator/lynae.py` |
 
-## 角色机制
+## Mecânicas do Ressonador
 
-琳奈拥有**双阶段**战斗系统：
+Lynae possui um sistema de combate em **duas fases**:
 
-### 光学取样阶段（常规形态）
+### Fase de Amostragem Óptica (forma normal)
 
-- 普攻/重击最多三段
-- 打满溢彩能量后，重击蓄力（霸体减伤）可进入轮滑形态
-- 满蓄力获得120点满流光
+- Ataques básicos e pesados possuem até três etapas
+- Ao preencher a energia Iridescente, carregar o ataque pesado — com resistência a interrupção e redução de dano — ativa a forma de patins
+- Uma carga completa concede 120 pontos de Luz Fluente
 
-### 绮彩巡游状态（轮滑形态）
+### Estado Desfile Caleidoscópico (forma de patins)
 
-- 普攻最多5段
-- 强化跳跃消耗40点流光，获得一点本色（最多3点）
-- 三点本色可打出强化下落攻击
-- 重击可持续自动转圈，消耗体力
-- **延奏会退出绮彩巡游，变奏不会**
-- E后从普攻第二段开始
+- Ataques básicos possuem até cinco etapas
+- O salto aprimorado consome 40 pontos de Luz Fluente e concede um ponto de Cor Verdadeira, até o máximo de três
+- Três pontos de Cor Verdadeira permitem um ataque descendente aprimorado
+- O ataque pesado mantém Lynae girando automaticamente e consome Vigor
+- **A Habilidade de Outro encerra o Desfile Caleidoscópico; a Intro não**
+- Depois de E, a sequência continua a partir do segundo ataque básico
 
-## 技能状态检测
+## Detecção do estado das habilidades
 
-### 特殊状态检测
+### Detecção de estados especiais
 
-| 检测项 | 逻辑 | 说明 |
+| Item detectado | Lógica | Descrição |
 |--------|------|------|
-| 灵感碰撞 | AND | 溢彩能量满，可进入轮滑（4个检测点白色） |
-| 流光满(120) | OR | 流光能量满 |
-| 本色1格 | 容差50 | 第1格能量（绿色系） |
-| 本色2格 | 容差50 | 第2格能量（黄色系） |
-| 本色3格 | 容差50 | 第3格能量（粉色系） |
-| 绮彩巡游·普攻 | AND | 轮滑形态的普攻图标 |
-| 幻光折跃 | OR | 强化跳跃可用 |
-| 虹彩飞溅 | AND | 强化下落攻击青春版 |
-| 视觉冲击 | AND | 强化下落攻击 |
+| Colisão de Inspiração | AND | Energia Iridescente cheia; permite entrar na forma de patins (quatro pontos brancos) |
+| Luz Fluente cheia (120) | OR | Energia Luz Fluente no máximo |
+| Cor Verdadeira 1 | Tolerância 50 | Primeiro segmento, em tons de verde |
+| Cor Verdadeira 2 | Tolerância 50 | Segundo segmento, em tons de amarelo |
+| Cor Verdadeira 3 | Tolerância 50 | Terceiro segmento, em tons de rosa |
+| Ataque do Desfile Caleidoscópico | AND | Ícone de ataque básico da forma de patins |
+| Salto de Luz Ilusória | OR | Salto aprimorado disponível |
+| Respingo Iridescente | AND | Primeira versão do ataque descendente aprimorado |
+| Impacto Visual | AND | Ataque descendente aprimorado |
 
-### 技能检测
+### Detecção de habilidades
 
-| 检测项 | 逻辑 | 说明 |
+| Item detectado | Lógica | Descrição |
 |--------|------|------|
-| 共鸣技能 E | AND | E技能就绪 |
-| 声骸技能 Q | OR | 声骸就绪 |
-| 共鸣解放 R | OR | 大招就绪 |
+| Habilidade de Ressonância E | AND | E disponível |
+| Habilidade de Eco Q | OR | Eco disponível |
+| Liberação de Ressonância R | OR | R disponível |
 
-## 连招片段
+## Fragmentos de combo
 
-### 光学取样阶段
+### Fase de Amostragem Óptica
 
-| 方法 | 描述 |
+| Método | Descrição |
 |------|------|
-| `optical_sampling_stage_a3()` | 3段普攻 |
-| `optical_sampling_stage_E2a()` | E+2段普攻 |
-| `optical_sampling_stage_z()` | 重击蓄力进入轮滑 |
+| `optical_sampling_stage_a3()` | Três ataques básicos |
+| `optical_sampling_stage_E2a()` | E + dois ataques básicos |
+| `optical_sampling_stage_z()` | Carrega o ataque pesado e entra na forma de patins |
 
-### 绮彩巡游状态
+### Estado Desfile Caleidoscópico
 
-| 方法 | 描述 |
+| Método | Descrição |
 |------|------|
-| `kaleidoscopic_parade_a5()` | 轮滑5段普攻 |
-| `kaleidoscopic_parade_E4a()` | 轮滑E+4段普攻 |
-| `kaleidoscopic_parade_z()` | 轮滑重击转圈 |
-| `kaleidoscopic_parade_j()` | 强化跳跃 |
-| `kaleidoscopic_parade_3jza()` | 3跳+重击+普攻 |
-| `kaleidoscopic_parade_2jzja()` | 2跳+重击+跳+普攻 |
+| `kaleidoscopic_parade_a5()` | Cinco ataques básicos sobre os patins |
+| `kaleidoscopic_parade_E4a()` | E + quatro ataques básicos sobre os patins |
+| `kaleidoscopic_parade_z()` | Ataque pesado giratório |
+| `kaleidoscopic_parade_j()` | Salto aprimorado |
+| `kaleidoscopic_parade_3jza()` | Três saltos + ataque pesado + ataque básico |
+| `kaleidoscopic_parade_2jzja()` | Dois saltos + ataque pesado + salto + ataque básico |
 
-### 通用
+### Ações gerais
 
-| 方法 | 描述 |
+| Método | Descrição |
 |------|------|
-| `a()` | 单段普攻 |
-| `a2()` | 2段普攻 |
-| `E()` | E技能 |
-| `aQ()` | 普攻+声骸 |
-| `Q()` | 声骸技能 |
-| `R()` | 共鸣解放（等待4.7秒） |
+| `a()` | Um ataque básico |
+| `a2()` | Dois ataques básicos |
+| `E()` | Habilidade de Ressonância |
+| `aQ()` | Ataque básico + Eco |
+| `Q()` | Habilidade de Eco |
+| `R()` | Liberação de Ressonância (espera 4,7 segundos) |
 
-## 连招决策逻辑 (`combo()`)
+## Lógica de decisão do combo (`combo()`)
 
 ```
-释放声骸 Q()
-截图检测所有状态
+Ativa o Eco com Q()
+Captura a tela e detecta todos os estados
 
-## 光学取样阶段（非轮滑）
-if 不在绮彩巡游:
-    if 溢彩能量未满:
-        ├─ 有E → optical_sampling_stage_E2a()
-        ├─ 无E → optical_sampling_stage_a3()
-        └─ 有R → R()
-    再次检查溢彩
-    if 仍未满 → return
-    进入轮滑: optical_sampling_stage_z()
+## Fase de Amostragem Óptica (fora dos patins)
+se não estiver no Desfile Caleidoscópico:
+    se a Energia Iridescente não estiver cheia:
+        ├─ E disponível → optical_sampling_stage_E2a()
+        ├─ E indisponível → optical_sampling_stage_a3()
+        └─ R disponível → R()
+    verifica novamente a Energia Iridescente
+    se ainda não estiver cheia → return
+    entra na forma de patins: optical_sampling_stage_z()
 
-## 绮彩巡游状态
-if 在绮彩巡游 或 刚进入轮滑:
-    有E → E()
-    有R → R()
+## Estado Desfile Caleidoscópico
+se estiver no Desfile Caleidoscópico ou tiver acabado de entrar nos patins:
+    E disponível → E()
+    R disponível → R()
 
-    本色3格满:
-        └─ j() 跳跃 + a() + a() 下砸
+    três segmentos de Cor Verdadeira cheios:
+        └─ j() para saltar + a() + a() para atacar em queda
         └─ return
 
-    随机: 50% kaleidoscopic_parade_z() / 50% optical_sampling_stage_a3()
+    escolha aleatória: 50% kaleidoscopic_parade_z() / 50% optical_sampling_stage_a3()
 
-    ## 空中攻击流程
-    检查流光能量:
-    ├─ 流光满 → kaleidoscopic_parade_2jzja() 三跳下砸
-    ├─ 无折跃 → return
-    ├─ 第一次折跃 j() + z()
-    ├─ 检查:
-    │   ├─ 流光满或不够 → aQ() 下砸结束
-    │   └─ 第二次折跃 j()
-    │       ├─ 流光满或不够 → aQ()
-    │       └─ 第三次折跃 j() + aQ()
+    ## Fluxo de ataques aéreos
+    verifica a Luz Fluente:
+    ├─ Luz Fluente cheia → kaleidoscopic_parade_2jzja(), com três saltos e ataque em queda
+    ├─ Salto de Luz Ilusória indisponível → return
+    ├─ primeiro salto aprimorado: j() + z()
+    ├─ verifica novamente:
+    │   ├─ Luz Fluente cheia ou insuficiente → aQ() encerra com ataque em queda
+    │   └─ segundo salto aprimorado: j()
+    │       ├─ Luz Fluente cheia ou insuficiente → aQ()
+    │       └─ terceiro salto aprimorado: j() + aQ()
 
-兜底: R() + optical_sampling_stage_a3() + E()
+alternativa final: R() + optical_sampling_stage_a3() + E()
 ```
 
-## 设计特点
+## Características do projeto
 
-1. **双阶段系统** - 光学取样和绮彩巡游两个完全不同的战斗模式
-2. **流光能量管理** - 精确管理流光能量决定跳跃次数
-3. **多层状态检测** - 需要检测溢彩、流光、本色等多种能量状态
-4. **体力管理** - 重击转圈消耗体力，50%概率选择重击或普攻避免缺体力
-5. **能量颜色区分** - 本色3格能量分别为绿色、黄色、粉色，需要不同的颜色检测
+1. **Sistema de duas fases** - Amostragem Óptica e Desfile Caleidoscópico possuem comportamentos completamente diferentes
+2. **Gerenciamento da Luz Fluente** - controla a energia com precisão para decidir quantos saltos executar
+3. **Detecção em várias camadas** - acompanha Energia Iridescente, Luz Fluente e Cor Verdadeira
+4. **Gerenciamento de Vigor** - como o giro consome Vigor, alterna com 50% de chance entre ataque pesado e básico
+5. **Cores distintas de energia** - os três segmentos de Cor Verdadeira usam verde, amarelo e rosa e exigem detectores diferentes
 
 ---
 
-*最后更新: 2026-02-06*
+*Última atualização: 06/02/2026*

@@ -87,7 +87,7 @@ class RouteExecutor:
         elif isinstance(step, Run):
             self._run(step)
         else:
-            raise TypeError(f"Unsupported step type: {type(step)}")
+            raise TypeError(f"Tipo de etapa não compatível: {type(step)}")
 
     def _walk(self, step: Walk):
         if step.steps <= 0:

@@ -89,7 +89,7 @@ class KeyEvent:
 # =========================
 
 def parse_file(path: str) -> List[KeyEvent]:
-    logger.info(f"读取文件: {path}")
+    logger.info(f"Lendo arquivo: {path}")
 
     events = []
 
@@ -221,7 +221,7 @@ class MacroPlayer:
         """补发所有未释放按键的弹起事件，防止卡键"""
         if not self._pressed_keys:
             return
-        logger.info(f"释放残留按键: {self._pressed_keys}")
+        logger.info(f"Liberando teclas ainda pressionadas: {self._pressed_keys}")
         release_events = [KeyEvent(0, key, False) for key in self._pressed_keys]
         send_batch(release_events)
         self._pressed_keys.clear()
@@ -242,7 +242,7 @@ class MacroPlayer:
 
             while i < n:
                 if self._stop:
-                    logger.info("停止播放")
+                    logger.info("Reprodução interrompida")
                     self._release_all_keys()  # 中断时立即释放
                     return
 
@@ -275,7 +275,7 @@ class MacroPlayer:
 
                 send_batch(batch)
 
-            logger.info("播放完成")
+            logger.info("Reprodução concluída")
         finally:
             self._release_all_keys()  # 正常结束时再次确保清空（集合应为空）
             # timeEndPeriod(1)
@@ -295,7 +295,7 @@ class TriggerController:
         self.points = points
 
     def wait_trigger(self):
-        logger.info("等待 J 触发...")
+        logger.info("Aguardando o acionamento da tecla J...")
 
         last = False
 
@@ -308,7 +308,7 @@ class TriggerController:
                 while (user32.GetAsyncKeyState(self.key) & 0x8000):
                     time.sleep(0)
 
-                logger.info("J触发完成")
+                logger.info("Tecla J acionada")
                 return t
 
             last = state
@@ -332,7 +332,7 @@ class TriggerController:
 
         while True:
             if should_stop and should_stop():
-                logger.info("等待触发已取消")
+                logger.info("Espera pelo acionamento cancelada")
                 return False  # 返回 False 表示未触发成功
 
             if not hwnd_util.is_foreground_window(hwnd):
@@ -352,7 +352,7 @@ class TriggerController:
                 break
 
             if check:
-                logger.info("发现点位，开始回放")
+                logger.info("Ponto detectado; iniciando a reprodução")
                 # from src.util import img_util
                 # img_util.save_img_in_temp(img)
                 break
@@ -371,7 +371,7 @@ def start_esc(player: MacroPlayer):
         while event.is_set():
             if user32.GetAsyncKeyState(0x1B) & 0x8000:
                 player.stop()
-                logger.info("ESC退出")
+                logger.info("Saindo por acionamento da tecla ESC")
                 return
             time.sleep(0.02)
 
@@ -413,5 +413,5 @@ if __name__ == "__main__":
     path = file_util.get_assets_macro_SoarToTheBeat_template("05_星云漫游_《致那暖明黄金》_困难.txt")
 
     logger.info(path)
-    logger.info("准备就绪，等待开始")
+    logger.info("Pronto; aguardando o início")
     run(path)

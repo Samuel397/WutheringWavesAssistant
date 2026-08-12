@@ -42,9 +42,9 @@ class BossRushRuntimeConfig:
             period = self._cfg.autoRestartPeriod.strip().split("#")
             restart_interval = 3600 * int(period[0]) + 60 * int(period[1]) + int(period[2])
             if restart_interval > 10:
-                logger.info(f"Scheduled game restart enabled, interval: {restart_interval}")
+                logger.info(f"Reinicialização programada do jogo ativada; intervalo: {restart_interval}")
                 return restart_interval
-            logger.warning(f"Restart interval too short: {restart_interval}, auto-disabling")
+            logger.warning(f"Intervalo de reinicialização curto demais: {restart_interval}; desativando automaticamente")
         except Exception:
             pass
         return -1
@@ -59,7 +59,7 @@ class BossRushRuntimeConfig:
         except Exception:
             pass
         if not level or level not in [40, 50, 60, 70, 80, 90]:
-            logger.warning(f"Invalid boss level: {level}")
+            logger.warning(f"Nível de chefe inválido: {level}")
             return -1
         return level
 
@@ -74,7 +74,7 @@ class BossRushRuntimeConfig:
             pass
         enemies = BossNameEnum.enemies()
         if not set(enemies).issubset(set(self._cfg.bossName)):
-            raise ValueError(f"Invalid boss name in list: '{self._cfg.bossName}'")
+            raise ValueError(f"Nome de chefe inválido na lista: '{self._cfg.bossName}'")
         return list(dict.fromkeys(self._cfg.bossName))
 
 
@@ -201,14 +201,14 @@ class GameRuntimeConfig:
 
     @cached_property
     def gameLanguage(self) -> Language:
-        lang = Language.ZH
+        lang = Language.PT
         if self._cfg.gameLanguage:
             try:
                 lang = Language(self._cfg.gameLanguage)
             except Exception:
-                logger.warning(f"Invalid game language: '{self._cfg.gameLanguage}', using default: {lang}")
+                logger.warning(f"Idioma do jogo inválido: '{self._cfg.gameLanguage}'; usando o padrão: {lang}")
                 return lang
-        logger.info(f"Using game language: '{lang}'")
+        logger.info(f"Usando o idioma do jogo: '{lang}'")
         return lang
 
     @cached_property
@@ -218,36 +218,36 @@ class GameRuntimeConfig:
             try:
                 path = Path(gamePath)
                 if path.is_file():
-                    logger.info(f"Using game path: '{path}'")
+                    logger.info(f"Usando o caminho do jogo: '{path}'")
                     return path
             except Exception:
                 pass
-            logger.warning(f"Invalid game path: '{gamePath}'")
+            logger.warning(f"Caminho do jogo inválido: '{gamePath}'")
 
         gamePath = winreg_util.get_install_path()
         if gamePath:
             try:
                 path = Path(gamePath)
                 if path.is_file():
-                    logger.info(f"Using game path: '{path}'")
+                    logger.info(f"Usando o caminho do jogo: '{path}'")
                     return path
             except Exception:
                 pass
-        logger.warning(f"Invalid game path: '{gamePath}'")
+        logger.warning(f"Caminho do jogo inválido: '{gamePath}'")
         return None
 
     @cached_property
     def device(self) -> Device:
         device = self._cfg.device
         if not device:
-            logger.info(f"Device: '{Device.Auto.value}'")
+            logger.info(f"Dispositivo: '{Device.Auto.value}'")
             return Device.Auto
         try:
             device = Device(device)
         except Exception:
-            logger.warning(f"Invalid device: '{self._cfg.device}', using default: {Device.Auto.value}")
+            logger.warning(f"Dispositivo inválido: '{self._cfg.device}'; usando o padrão: {Device.Auto.value}")
             return Device.Auto
-        logger.info(f"Device: '{device.value}'")
+        logger.info(f"Dispositivo: '{device.value}'")
         return device
 
 
@@ -279,7 +279,7 @@ class RuntimeConfig:
     def format_config(cfg: Config | dict | str | None) -> Config:
         if not cfg:
             # gui提交的任务都有，pytest等提交的可能没有
-            logger.warning(f"Using default config because cfg is: '{cfg}'")
+            logger.warning(f"Usando a configuração padrão porque cfg é: '{cfg}'")
             cfg = Config.load_user_config()
         elif isinstance(cfg, dict):
             cfg = Config.from_dict(cfg)

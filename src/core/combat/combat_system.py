@@ -123,7 +123,7 @@ class CombatSystem:
             elif CharClassEnum.Healer in char_class:
                 healer.append((resonator, index))
             else:
-                raise ValueError("Unknown enum value")
+                raise ValueError("Valor de enumeração desconhecido")
         # 辅助先于输出
         sorted_resonators: list[tuple[BaseResonator, int]] = support + dps + healer + none
         logger.debug(f"sorted_resonators: {sorted_resonators}")
@@ -283,8 +283,7 @@ class CombatSystem:
             _resonators_names_en.append(resonator_temp.resonator_name().name if resonator_temp else None)
 
         if is_print:
-            logger.info(f"team_members: {_resonators_names_en}")
-            logger.info(f"编队: {resonator_names_zh}")
+            logger.info("Equipe reconhecida: %s", _resonators_names_en)
         self.resonators = resonators
 
     def is_boss_health_bar_exist(self, img=None):
