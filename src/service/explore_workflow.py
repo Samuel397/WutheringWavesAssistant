@@ -1,5 +1,6 @@
 import ctypes
 import logging
+import os
 import threading
 import time
 
@@ -171,9 +172,35 @@ class ExploreWorkflow(AbstractWorkflow):
             listener = KeyListener(event=self.ctx.runtime.stop_event, interval=0.005)
 
             listener.register(win32con.VK_XBUTTON1, self._on_click)
+            listener.register(win32con.VK_F8, self._on_click)
             listener.register(win32con.VK_ESCAPE, self._on_press)
 
             listener.start()
+
+            autotest_seconds_raw = os.environ.get("WWA_EXPLORE_AUTOTEST_SECONDS")
+            if autotest_seconds_raw:
+                autotest_seconds = float(autotest_seconds_raw)
+                if not 2.0 <= autotest_seconds <= 30.0:
+                    raise ValueError("WWA_EXPLORE_AUTOTEST_SECONDS deve estar entre 2 e 30 segundos")
+
+                logger.info("Iniciando teste cronometrado de combate por %.1fs", autotest_seconds)
+                self._on_click(win32con.VK_F8, True)
+
+                if self.combat_system is None:
+                    logger.warning("Teste cronometrado não iniciou combate; encerrando sem enviar mais comandos")
+                    self.ctx.runtime.stop_event.clear()
+                else:
+                    def stop_autotest():
+                        try:
+                            if self.combat_system is not None:
+                                self._on_click(win32con.VK_F8, True)
+                        finally:
+                            self.ctx.runtime.stop_event.clear()
+
+                    timer = threading.Timer(autotest_seconds, stop_autotest)
+                    timer.daemon = True
+                    timer.start()
+
             listener.join()
 
         except Exception as e:
@@ -225,7 +252,7 @@ class ExploreWorkflow(AbstractWorkflow):
             with self.lock:
                 # 没启动就启动，已启动就停止
                 if self.combat_system is None:
-                    logger.info(f"[{self.count:03d}] XButton1 iniciado")
+                    logger.info(f"[{self.count:03d}] Combate automático iniciado")
                     self.last_time = time.monotonic()
                     img = self.ui.grap()
                     if not self.ui.is_on_homepage(img):
@@ -267,7 +294,7 @@ class ExploreWorkflow(AbstractWorkflow):
                     if time.monotonic() - self.last_time < self.click_cooldown:
                         logger.info(f"[{self.count:03d}] Clique repetido em curto intervalo; ignorando")
                         return True
-                    logger.info(f"[{self.count:03d}] XButton1 interrompido")
+                    logger.info(f"[{self.count:03d}] Combate automático interrompido")
                     self.count += 1
                     combat_system = self.combat_system
                     self.combat_system = None
