@@ -99,7 +99,7 @@ class BasicSettingWidget(QWidget):
             "CPU",
         ]
         self.deviceDesc = [
-            "自动",
+            self.tr("自动"),
             "GPU-CUDA",
             "CPU",
         ]
@@ -124,9 +124,9 @@ class BasicSettingWidget(QWidget):
         self.deviceLayout = QHBoxLayout()
         self.deviceLabel = QLabel(self.tr("运行设备:"), self)
         self.deviceComboBox = ComboBox(self)
-        self.deviceComboBox.setPlaceholderText(self.tr("{text}").format(text=self.deviceDesc[0]))
+        self.deviceComboBox.setPlaceholderText(self.deviceDesc[0])
         for i in range(len(self.device)):
-            self.deviceComboBox.addItem(self.tr("{text}").format(text=self.deviceDesc[i]), userData=self.device[i])
+            self.deviceComboBox.addItem(self.deviceDesc[i], userData=self.device[i])
             if i == 1:
                 self.deviceComboBox.setItemEnabled(self.deviceComboBox.count() - 1, False)
 
@@ -389,14 +389,14 @@ class BottomWidget(CardWidget):
 
     def __tipsText(self) -> str:
         # 双倍提醒
-        tipsText = ''
+        tip = ""
         v = Version(re.search(r"\d+(?:\.\d+){0,2}", __version__).group())
         if (v.major, v.minor) == (3, 5):
             if TimeRange.from_str("2026-07-23 04:00", "2026-07-30 04:00").contains():
-                tipsText = '<b><font color="red">今日: 双倍材料本</font></b>'
+                tip = self.tr("今日: 双倍材料本")
             elif TimeRange.from_str("2026-08-12 04:00", "2026-08-19 04:00").contains():
-                tipsText = '<b><font color="red">今日: 双倍无音区</font></b>'
-        return tipsText
+                tip = self.tr("今日: 双倍无音区")
+        return f'<b><font color="red">{tip}</font></b>' if tip else ""
 
     def createTopRightInfoBar(self, title: str, content: str, duration: int):
         InfoBar.success(

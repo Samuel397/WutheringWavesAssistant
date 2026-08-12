@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 from string import Formatter
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 from PySide6.QtCore import QLocale, QTranslator
@@ -140,4 +141,30 @@ def test_boss_widgets_render_localized_names_but_keep_enum_ids():
 
     settings_card.deleteLater()
     home_widget.deleteLater()
+    app.removeTranslator(translator)
+
+
+def test_home_renders_localized_device_and_double_reward_tip_but_keeps_device_id():
+    app = QApplication.instance() or QApplication([])
+    translator = QTranslator(app)
+    assert translator.load(QLocale("pt_BR"), "gallery", ".", ":/gallery/i18n")
+    app.installTranslator(translator)
+
+    from src.gui.view.home_interface import BasicSettingWidget, BottomWidget, TimeRange
+
+    settings = BasicSettingWidget()
+    auto_index = settings.deviceComboBox.findData("Auto")
+    assert auto_index >= 0
+    assert settings.deviceComboBox.itemText(auto_index) == "Automático"
+    assert settings.deviceComboBox.itemData(auto_index) == "Auto"
+
+    with patch.object(TimeRange, "contains", side_effect=[False, True]):
+        bottom = BottomWidget()
+    assert bottom.tipsLabel.text() == (
+        '<b><font color="red">Hoje: recompensas em dobro nos Campos Tacet</font></b>'
+    )
+
+    bottom.timer.stop()
+    bottom.deleteLater()
+    settings.deleteLater()
     app.removeTranslator(translator)

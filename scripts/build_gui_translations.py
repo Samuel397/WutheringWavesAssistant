@@ -402,6 +402,8 @@ TRANSLATIONS = {
     "秒": "s",
     "脚本优先操控运行中的游戏窗口，不管这个参数，多开或游戏没启动时才看选了哪个": "O script prioriza a janela do jogo que já estiver em execução. Esta opção só é usada com várias instâncias abertas ou quando o jogo ainda não foi iniciado.",
     "自动": "Automático",
+    "今日: 双倍材料本": "Hoje: recompensas em dobro nos desafios de material",
+    "今日: 双倍无音区": "Hoje: recompensas em dobro nos Campos Tacet",
     "自动对话": "Diálogo automático",
     "自动战斗:": "Combate automático:",
     "自动拾取:": "Coleta automática:",

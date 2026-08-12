@@ -2560,6 +2560,11 @@ Não altere diretamente os modelos predefinidos. Em caso de problema, primeiro c
     <context>
         <name>BasicSettingWidget</name>
         <message>
+            <location filename="../../view/home_interface.py" line="102"></location>
+            <source>自动</source>
+            <translation>Automático</translation>
+        </message>
+        <message>
             <location filename="../../view/home_interface.py" line="109"></location>
             <source>基础设置</source>
             <translation>Configurações básicas</translation>
@@ -2570,8 +2575,6 @@ Não altere diretamente os modelos predefinidos. Em caso de problema, primeiro c
             <translation>Idioma do jogo:</translation>
         </message>
         <message>
-            <location filename="../../view/home_interface.py" line="129"></location>
-            <location filename="../../view/home_interface.py" line="127"></location>
             <location filename="../../view/home_interface.py" line="120"></location>
             <location filename="../../view/home_interface.py" line="116"></location>
             <source>{text}</source>
@@ -2627,6 +2630,16 @@ Não altere diretamente os modelos predefinidos. Em caso de problema, primeiro c
             <location filename="../../view/home_interface.py" line="376"></location>
             <source>Stop</source>
             <translation>Parar</translation>
+        </message>
+        <message>
+            <location filename="../../view/home_interface.py" line="396"></location>
+            <source>今日: 双倍材料本</source>
+            <translation>Hoje: recompensas em dobro nos desafios de material</translation>
+        </message>
+        <message>
+            <location filename="../../view/home_interface.py" line="398"></location>
+            <source>今日: 双倍无音区</source>
+            <translation>Hoje: recompensas em dobro nos Campos Tacet</translation>
         </message>
     </context>
     <context>
