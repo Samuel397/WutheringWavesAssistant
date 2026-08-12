@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+import os
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -418,8 +419,21 @@ def auto_pickup_task_run(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
 
     page_event_service: PageEventService = container.auto_pickup_service()
 
+    autotest_seconds_raw = os.environ.get("WWA_TASK_AUTOSTOP_SECONDS")
+    autotest_deadline = None
+    if autotest_seconds_raw:
+        autotest_seconds = float(autotest_seconds_raw)
+        if not 2.0 <= autotest_seconds <= 60.0:
+            raise ValueError("WWA_TASK_AUTOSTOP_SECONDS deve estar entre 2 e 60 segundos")
+        autotest_deadline = time.monotonic() + autotest_seconds
+        logger.info("Coleta automática limitada a %.1fs para validação", autotest_seconds)
+
     try:
         while event.is_set():
+            if autotest_deadline is not None and time.monotonic() >= autotest_deadline:
+                logger.info("Tempo de validação da coleta automática concluído")
+                event.clear()
+                break
             clock_action.action()
             try:
                 page_event_service.execute()
