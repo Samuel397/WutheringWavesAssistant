@@ -7,11 +7,12 @@ import time
 import win32con
 
 from src.core.color import ColorRule, Color, RuleMode
+from src.core.combat.combat_core import ResonatorNameEnum
 from src.core.combat.combat_system import CombatSystem
 from src.core.exceptions import StopError
 from src.core.geometry import AnchorBBox, Align, AnchorPoint, Scaler
 from src.core.i18n import I18nText, Language
-from src.core.pages import UIOp
+from src.core.pages import I18nPage, UIOp
 from src.core.workflow import NodeContext, AbstractWorkflow
 from src.util import img_util, file_util
 from src.util.img_sift_util import SIFTFeatureMatcher
@@ -244,6 +245,22 @@ class ExploreWorkflow(AbstractWorkflow):
         white_count = sum(x for x in result)
         return min(white_count + 1, 3)
 
+    def _prepare_homepage(self):
+        """Return a fresh gameplay frame, closing the known Terminal page once."""
+        img = self.ui.grap()
+        if self.ui.is_on_homepage(img):
+            return img
+
+        if not self.ui.snapshot(img=img).match_page(I18nPage.Terminal.PAGE):
+            return None
+
+        logger.info("Terminal detectado antes do combate; voltando ao mundo aberto")
+        self.ui.esc().sleep(0.5)
+        if not self.ui.wait_back_home(timeout=5, interval=0.25):
+            logger.warning("O mundo aberto não apareceu após fechar o Terminal")
+            return None
+        return self.ui.grap()
+
     def _on_click(self, button, pressed):
         if not pressed:  # 忽略弹起信号
             return True
@@ -254,8 +271,8 @@ class ExploreWorkflow(AbstractWorkflow):
                 if self.combat_system is None:
                     logger.info(f"[{self.count:03d}] Combate automático iniciado")
                     self.last_time = time.monotonic()
-                    img = self.ui.grap()
-                    if not self.ui.is_on_homepage(img):
+                    img = self._prepare_homepage()
+                    if img is None:
                         logger.info(f"[{self.count:03d}] Fora do mundo aberto")
                         return True
                     team_members = [None, None, None]
@@ -282,6 +299,19 @@ class ExploreWorkflow(AbstractWorkflow):
                                 team_members[i] = "unknown"
                         else:
                             team_members[i] = None
+
+                    detected_team = []
+                    for member_name in team_members:
+                        if member_name is None:
+                            detected_team.append(None)
+                        elif member_name == ResonatorNameEnum.rover.value:
+                            detected_team.append(ResonatorNameEnum.rover.name)
+                        elif member_name == "unknown":
+                            detected_team.append("unknown")
+                        else:
+                            member = ResonatorNameEnum.get_enum_by_value(member_name)
+                            detected_team.append(member.name if member else "unknown")
+                    logger.info("Equipe detectada no HUD: %s", detected_team)
 
                     combat_system = CombatSystem(self.ctx.control_service, self.ctx.img_service)
                     combat_system.set_resonators(team_members)
