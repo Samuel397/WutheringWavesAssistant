@@ -98,7 +98,7 @@ class DailyRuntimeConfig:
         self.tacetDiscordNestOpen: bool = bool(cfg.tacetDiscordNestOpen)
         self.activity: bool = bool(cfg.activity)
         self.activityOpen: bool = bool(cfg.activityOpen)
-        self.activityWeeklyOpen: bool = True
+        self.activityWeeklyOpen: bool = bool(cfg.activityWeeklyOpen)
         self.mail: bool = bool(cfg.mail)
         self.mailOpen: bool = bool(cfg.mailOpen)
         self.pioneerPodcast: bool = bool(cfg.pioneerPodcast)

@@ -179,6 +179,7 @@ class ParamConfig(QConfig):
     tacetDiscordNestOpen = ConfigItem("Daily", "TacetDiscordNestOpen", False, BoolValidator())
     activity = ConfigItem("Daily", "Activity", "Auto")
     activityOpen = ConfigItem("Daily", "ActivityOpen", False, BoolValidator())
+    activityWeeklyOpen = ConfigItem("Daily", "ActivityWeeklyOpen", False, BoolValidator())
     mail = ConfigItem("Daily", "Mail", "Auto")
     mailOpen = ConfigItem("Daily", "MailOpen", False, BoolValidator())
     pioneerPodcast = ConfigItem("Daily", "PioneerPodcast", "Auto")

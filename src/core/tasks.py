@@ -702,11 +702,27 @@ def macro_point_scaler(ctx):
 
 
 def daily_task(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
+    autotest_timer = None
     try:
 
         ctx, container = task_init(event, spec, ipc, source=MsgSource.DAILY_TASK, **kwargs)
         logger.info(f"Tarefa diária iniciada, task_id: {spec.task_id}")
         ctx.runtime.send(MsgType.TASK_STATUS, status=MsgTaskStatus.RUNNING)
+
+        autotest_seconds_raw = os.environ.get("WWA_TASK_AUTOSTOP_SECONDS")
+        if autotest_seconds_raw:
+            autotest_seconds = float(autotest_seconds_raw)
+            if not 10.0 <= autotest_seconds <= 300.0:
+                raise ValueError("WWA_TASK_AUTOSTOP_SECONDS deve estar entre 10 e 300 segundos para DailyTask")
+
+            def stop_daily_autotest():
+                logger.warning("Limite de validação da tarefa diária atingido; solicitando parada segura")
+                event.clear()
+
+            autotest_timer = threading.Timer(autotest_seconds, stop_daily_autotest)
+            autotest_timer.daemon = True
+            autotest_timer.start()
+            logger.info("Tarefa diária limitada a %.1fs para validação", autotest_seconds)
 
         # 1. 先获取当前鼠标位置
         original_x, original_y = keymouse_util.get_mouse_position()
@@ -746,6 +762,8 @@ def daily_task(event, spec: TaskSpec, ipc: IPCManager, **kwargs):
             }, block=True)
             time.sleep(0.1)
         finally:
+            if autotest_timer is not None:
+                autotest_timer.cancel()
             logger.info(f"Tarefa diária encerrada, task_id: {spec.task_id}")
             release_press_key(ctx)
 
